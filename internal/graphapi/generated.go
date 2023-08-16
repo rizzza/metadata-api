@@ -324,7 +324,7 @@ func (e *executableSchema) Schema() *ast.Schema {
 }
 
 func (e *executableSchema) Complexity(typeName, field string, childComplexity int, rawArgs map[string]interface{}) (int, bool) {
-	ec := executionContext{nil, e, nil, 0, nil}
+	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
 
@@ -1215,7 +1215,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
-	ec := executionContext{rc, e, nil, 0, make(chan graphql.DeferredResult)}
+	ec := executionContext{rc, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputAnnotationDeleteInput,
 		ec.unmarshalInputAnnotationNamespaceOrder,
@@ -1250,9 +1250,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 				ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
 				data = ec._Query(ctx, rc.Operation.SelectionSet)
 			} else {
-				if ec.pendingDeferred > 0 {
+				if atomic.LoadInt32(&ec.pendingDeferred) > 0 {
 					result := <-ec.deferredResults
-					ec.pendingDeferred--
+					atomic.AddInt32(&ec.pendingDeferred, -1)
 					data = result.Result
 					response.Path = result.Path
 					response.Label = result.Label
@@ -1264,28 +1264,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			var buf bytes.Buffer
 			data.MarshalGQL(&buf)
 			response.Data = buf.Bytes()
-			response.HasNext = ec.pendingDeferred+len(ec.deferredGroups) > 0
-
-			// dispatch deferred calls
-			dg := ec.deferredGroups
-			ec.deferredGroups = nil
-			for _, deferred := range dg {
-				ec.pendingDeferred++
-				go func(deferred graphql.DeferredGroup) {
-					ctx = graphql.WithFreshResponseContext(deferred.Context)
-					deferred.FieldSet.Dispatch(ctx)
-					ds := graphql.DeferredResult{
-						Path:   deferred.Path,
-						Label:  deferred.Label,
-						Result: deferred.FieldSet,
-						Errors: graphql.GetErrors(ctx),
-					}
-					// null fields should bubble up
-					if deferred.FieldSet.Invalids > 0 {
-						ds.Result = graphql.Null
-					}
-					ec.deferredResults <- ds
-				}(deferred)
+			if atomic.LoadInt32(&ec.deferred) > 0 {
+				hasNext := atomic.LoadInt32(&ec.pendingDeferred) > 0
+				response.HasNext = &hasNext
 			}
 
 			return &response
@@ -1314,9 +1295,28 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 type executionContext struct {
 	*graphql.OperationContext
 	*executableSchema
-	deferredGroups  []graphql.DeferredGroup
-	pendingDeferred int
+	deferred        int32
+	pendingDeferred int32
 	deferredResults chan graphql.DeferredResult
+}
+
+func (ec *executionContext) processDeferredGroup(dg graphql.DeferredGroup) {
+	atomic.AddInt32(&ec.pendingDeferred, 1)
+	go func() {
+		ctx := graphql.WithFreshResponseContext(dg.Context)
+		dg.FieldSet.Dispatch(ctx)
+		ds := graphql.DeferredResult{
+			Path:   dg.Path,
+			Label:  dg.Label,
+			Result: dg.FieldSet,
+			Errors: graphql.GetErrors(ctx),
+		}
+		// null fields should bubble up
+		if dg.FieldSet.Invalids > 0 {
+			ds.Result = graphql.Null
+		}
+		ec.deferredResults <- ds
+	}()
 }
 
 func (ec *executionContext) introspectSchema() (*introspection.Schema, error) {
@@ -4572,7 +4572,7 @@ func (ec *executionContext) fieldContext_Entity_findAnnotationByID(ctx context.C
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Entity_findAnnotationByID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -4643,7 +4643,7 @@ func (ec *executionContext) fieldContext_Entity_findAnnotationNamespaceByID(ctx 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Entity_findAnnotationNamespaceByID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -4714,7 +4714,7 @@ func (ec *executionContext) fieldContext_Entity_findMetadataByID(ctx context.Con
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Entity_findMetadataByID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -4785,7 +4785,7 @@ func (ec *executionContext) fieldContext_Entity_findMetadataByNodeID(ctx context
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Entity_findMetadataByNodeID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -4846,7 +4846,7 @@ func (ec *executionContext) fieldContext_Entity_findMetadataNodeByID(ctx context
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Entity_findMetadataNodeByID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -4909,7 +4909,7 @@ func (ec *executionContext) fieldContext_Entity_findResourceOwnerByID(ctx contex
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Entity_findResourceOwnerByID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -4984,7 +4984,7 @@ func (ec *executionContext) fieldContext_Entity_findStatusByID(ctx context.Conte
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Entity_findStatusByID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -5053,7 +5053,7 @@ func (ec *executionContext) fieldContext_Entity_findStatusNamespaceByID(ctx cont
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Entity_findStatusNamespaceByID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -5116,7 +5116,7 @@ func (ec *executionContext) fieldContext_Entity_findStatusOwnerByID(ctx context.
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Entity_findStatusOwnerByID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -5355,7 +5355,7 @@ func (ec *executionContext) fieldContext_Metadata_annotations(ctx context.Contex
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Metadata_annotations_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -5418,7 +5418,7 @@ func (ec *executionContext) fieldContext_Metadata_statuses(ctx context.Context, 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Metadata_statuses_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -5874,7 +5874,7 @@ func (ec *executionContext) fieldContext_Mutation_annotationUpdate(ctx context.C
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_annotationUpdate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -5933,7 +5933,7 @@ func (ec *executionContext) fieldContext_Mutation_annotationDelete(ctx context.C
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_annotationDelete_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -5992,7 +5992,7 @@ func (ec *executionContext) fieldContext_Mutation_annotationNamespaceCreate(ctx 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_annotationNamespaceCreate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -6053,7 +6053,7 @@ func (ec *executionContext) fieldContext_Mutation_annotationNamespaceDelete(ctx 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_annotationNamespaceDelete_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -6112,7 +6112,7 @@ func (ec *executionContext) fieldContext_Mutation_annotationNamespaceUpdate(ctx 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_annotationNamespaceUpdate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -6171,7 +6171,7 @@ func (ec *executionContext) fieldContext_Mutation_statusUpdate(ctx context.Conte
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_statusUpdate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -6230,7 +6230,7 @@ func (ec *executionContext) fieldContext_Mutation_statusDelete(ctx context.Conte
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_statusDelete_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -6289,7 +6289,7 @@ func (ec *executionContext) fieldContext_Mutation_statusNamespaceCreate(ctx cont
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_statusNamespaceCreate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -6350,7 +6350,7 @@ func (ec *executionContext) fieldContext_Mutation_statusNamespaceDelete(ctx cont
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_statusNamespaceDelete_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -6409,7 +6409,7 @@ func (ec *executionContext) fieldContext_Mutation_statusNamespaceUpdate(ctx cont
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_statusNamespaceUpdate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -6650,7 +6650,7 @@ func (ec *executionContext) fieldContext_Query_annotationNamespace(ctx context.C
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_annotationNamespace_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -6705,7 +6705,7 @@ func (ec *executionContext) fieldContext_Query__entities(ctx context.Context, fi
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query__entities_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -6827,7 +6827,7 @@ func (ec *executionContext) fieldContext_Query___type(ctx context.Context, field
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query___type_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -6989,7 +6989,7 @@ func (ec *executionContext) fieldContext_ResourceOwner_annotationNamespaces(ctx 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_ResourceOwner_annotationNamespaces_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -8593,7 +8593,7 @@ func (ec *executionContext) fieldContext_StatusOwner_statusNamespaces(ctx contex
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_StatusOwner_statusNamespaces_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -10181,7 +10181,7 @@ func (ec *executionContext) fieldContext___Type_fields(ctx context.Context, fiel
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field___Type_fields_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -10369,7 +10369,7 @@ func (ec *executionContext) fieldContext___Type_enumValues(ctx context.Context, 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field___Type_enumValues_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -13211,9 +13211,10 @@ func (ec *executionContext) _Annotation(ctx context.Context, sel ast.SelectionSe
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -13256,9 +13257,10 @@ func (ec *executionContext) _AnnotationConnection(ctx context.Context, sel ast.S
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -13294,9 +13296,10 @@ func (ec *executionContext) _AnnotationDeleteResponse(ctx context.Context, sel a
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -13334,9 +13337,10 @@ func (ec *executionContext) _AnnotationEdge(ctx context.Context, sel ast.Selecti
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -13461,9 +13465,10 @@ func (ec *executionContext) _AnnotationNamespace(ctx context.Context, sel ast.Se
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -13506,9 +13511,10 @@ func (ec *executionContext) _AnnotationNamespaceConnection(ctx context.Context, 
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -13544,9 +13550,10 @@ func (ec *executionContext) _AnnotationNamespaceCreatePayload(ctx context.Contex
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -13587,9 +13594,10 @@ func (ec *executionContext) _AnnotationNamespaceDeletePayload(ctx context.Contex
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -13627,9 +13635,10 @@ func (ec *executionContext) _AnnotationNamespaceEdge(ctx context.Context, sel as
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -13665,9 +13674,10 @@ func (ec *executionContext) _AnnotationNamespaceUpdatePayload(ctx context.Contex
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -13703,9 +13713,10 @@ func (ec *executionContext) _AnnotationUpdateResponse(ctx context.Context, sel a
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -13942,9 +13953,10 @@ func (ec *executionContext) _Entity(ctx context.Context, sel ast.SelectionSet) g
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -14103,9 +14115,10 @@ func (ec *executionContext) _Metadata(ctx context.Context, sel ast.SelectionSet,
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -14148,9 +14161,10 @@ func (ec *executionContext) _MetadataConnection(ctx context.Context, sel ast.Sel
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -14188,9 +14202,10 @@ func (ec *executionContext) _MetadataEdge(ctx context.Context, sel ast.Selection
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -14259,9 +14274,10 @@ func (ec *executionContext) _MetadataNode(ctx context.Context, sel ast.Selection
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -14370,9 +14386,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -14417,9 +14434,10 @@ func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet,
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -14532,9 +14550,10 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -14639,9 +14658,10 @@ func (ec *executionContext) _ResourceOwner(ctx context.Context, sel ast.Selectio
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -14779,9 +14799,10 @@ func (ec *executionContext) _Status(ctx context.Context, sel ast.SelectionSet, o
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -14824,9 +14845,10 @@ func (ec *executionContext) _StatusConnection(ctx context.Context, sel ast.Selec
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -14862,9 +14884,10 @@ func (ec *executionContext) _StatusDeleteResponse(ctx context.Context, sel ast.S
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -14902,9 +14925,10 @@ func (ec *executionContext) _StatusEdge(ctx context.Context, sel ast.SelectionSe
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -14996,9 +15020,10 @@ func (ec *executionContext) _StatusNamespace(ctx context.Context, sel ast.Select
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15041,9 +15066,10 @@ func (ec *executionContext) _StatusNamespaceConnection(ctx context.Context, sel 
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15079,9 +15105,10 @@ func (ec *executionContext) _StatusNamespaceCreatePayload(ctx context.Context, s
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15122,9 +15149,10 @@ func (ec *executionContext) _StatusNamespaceDeletePayload(ctx context.Context, s
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15162,9 +15190,10 @@ func (ec *executionContext) _StatusNamespaceEdge(ctx context.Context, sel ast.Se
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15200,9 +15229,10 @@ func (ec *executionContext) _StatusNamespaceUpdatePayload(ctx context.Context, s
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15307,9 +15337,10 @@ func (ec *executionContext) _StatusOwner(ctx context.Context, sel ast.SelectionS
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15345,9 +15376,10 @@ func (ec *executionContext) _StatusUpdateResponse(ctx context.Context, sel ast.S
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15380,9 +15412,10 @@ func (ec *executionContext) __Service(ctx context.Context, sel ast.SelectionSet,
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15435,9 +15468,10 @@ func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionS
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15482,9 +15516,10 @@ func (ec *executionContext) ___EnumValue(ctx context.Context, sel ast.SelectionS
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15539,9 +15574,10 @@ func (ec *executionContext) ___Field(ctx context.Context, sel ast.SelectionSet, 
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15586,9 +15622,10 @@ func (ec *executionContext) ___InputValue(ctx context.Context, sel ast.Selection
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15640,9 +15677,10 @@ func (ec *executionContext) ___Schema(ctx context.Context, sel ast.SelectionSet,
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15696,9 +15734,10 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 		return graphql.Null
 	}
 
-	// assign deferred groups to main executionContext
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
 	for label, dfs := range deferred {
-		ec.deferredGroups = append(ec.deferredGroups, graphql.DeferredGroup{
+		ec.processDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,

@@ -25,3 +25,10 @@ go.work
 
 # Dev sqlite database
 metadata.sqlite
+
+# binary
+metadata-api
+
+# devcontainer artifacts
+.devcontainer/nats/resolver.conf
+.devcontainer/nsc

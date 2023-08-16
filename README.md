@@ -62,6 +62,22 @@ Statuses store data the same way that Annotations do. Becuase a status field may
 - [Development Guide](docs/development.md)
 - [Contributing](https://infratographer.com/community/contributing/)
 
+### Getting Started
+
+To begin start by opening the devcontainer as outlined in the [Development Guide](docs/development.md)
+
+**To initialize the database:**
+1. `go build`
+1. `./metadata-api migrate up`
+
+**To run the api**
+```sh
+make go-run
+```
+
+**Interacting with the GraphQL queries:**
+> Go to localhost:XXXX/playground
+
 ## Code of Conduct
 
 [Contributor Code of Conduct](https://infratographer.com/community/code-of-conduct/). By participating in this project you agree to abide by its terms.

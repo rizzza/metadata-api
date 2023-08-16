@@ -775,6 +775,7 @@ input UpdateStatusNamespaceInput {
 	private: Boolean
 }
 scalar _Any
+# a union of all types that use the @key directive
 union _Entity = Annotation | AnnotationNamespace | Metadata | MetadataNode | ResourceOwner | Status | StatusNamespace | StatusOwner
 type _Service {
 	sdl: String
