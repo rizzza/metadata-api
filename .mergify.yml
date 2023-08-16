@@ -17,5 +17,7 @@ pull_request_rules:
       - author=renovate[bot]
       - and: *CheckRuns
     actions:
+      review:
+        type: APPROVE
       merge:
         method: squash
