@@ -191,6 +191,11 @@ func (anc *AnnotationNamespaceCreate) check() error {
 	if _, ok := anc.mutation.OwnerID(); !ok {
 		return &ValidationError{Name: "owner_id", err: errors.New(`generated: missing required field "AnnotationNamespace.owner_id"`)}
 	}
+	if v, ok := anc.mutation.OwnerID(); ok {
+		if err := annotationnamespace.OwnerIDValidator(string(v)); err != nil {
+			return &ValidationError{Name: "owner_id", err: fmt.Errorf(`generated: validator failed for field "AnnotationNamespace.owner_id": %w`, err)}
+		}
+	}
 	if _, ok := anc.mutation.Private(); !ok {
 		return &ValidationError{Name: "private", err: errors.New(`generated: missing required field "AnnotationNamespace.private"`)}
 	}

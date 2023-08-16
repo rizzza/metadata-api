@@ -52,11 +52,18 @@ func TestStatusUpdate(t *testing.T) {
 			Source:      st1.Source,
 		},
 		{
-			TestName:    "Fails when namespace doesn't exists",
+			TestName:    "Fails when namespace doesn't exist",
 			NodeID:      gidx.MustNewID("testing"),
 			NamespaceID: gidx.MustNewID("notreal"),
 			Source:      "go-tests",
-			ErrorMsg:    "constraint failed", // TODO: This should have a better error message
+			ErrorMsg:    "status_namespace not found",
+		},
+		{
+			TestName:    "Fails when nodeID is empty",
+			NodeID:      "",
+			NamespaceID: st1.StatusNamespaceID,
+			Source:      "go-tests",
+			ErrorMsg:    "value is less than the required length",
 		},
 	}
 

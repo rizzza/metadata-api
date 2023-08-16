@@ -47,6 +47,10 @@ func init() {
 	annotation.DefaultUpdatedAt = annotationDescUpdatedAt.Default.(func() time.Time)
 	// annotation.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	annotation.UpdateDefaultUpdatedAt = annotationDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// annotationDescAnnotationNamespaceID is the schema descriptor for annotation_namespace_id field.
+	annotationDescAnnotationNamespaceID := annotationFields[2].Descriptor()
+	// annotation.AnnotationNamespaceIDValidator is a validator for the "annotation_namespace_id" field. It is called by the builders before save.
+	annotation.AnnotationNamespaceIDValidator = annotationDescAnnotationNamespaceID.Validators[0].(func(string) error)
 	// annotationDescID is the schema descriptor for id field.
 	annotationDescID := annotationFields[0].Descriptor()
 	// annotation.DefaultID holds the default value on creation for the id field.
@@ -70,6 +74,10 @@ func init() {
 	annotationnamespaceDescName := annotationnamespaceFields[1].Descriptor()
 	// annotationnamespace.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	annotationnamespace.NameValidator = annotationnamespaceDescName.Validators[0].(func(string) error)
+	// annotationnamespaceDescOwnerID is the schema descriptor for owner_id field.
+	annotationnamespaceDescOwnerID := annotationnamespaceFields[2].Descriptor()
+	// annotationnamespace.OwnerIDValidator is a validator for the "owner_id" field. It is called by the builders before save.
+	annotationnamespace.OwnerIDValidator = annotationnamespaceDescOwnerID.Validators[0].(func(string) error)
 	// annotationnamespaceDescPrivate is the schema descriptor for private field.
 	annotationnamespaceDescPrivate := annotationnamespaceFields[3].Descriptor()
 	// annotationnamespace.DefaultPrivate holds the default value on creation for the private field.
@@ -93,6 +101,10 @@ func init() {
 	metadata.DefaultUpdatedAt = metadataDescUpdatedAt.Default.(func() time.Time)
 	// metadata.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	metadata.UpdateDefaultUpdatedAt = metadataDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// metadataDescNodeID is the schema descriptor for node_id field.
+	metadataDescNodeID := metadataFields[1].Descriptor()
+	// metadata.NodeIDValidator is a validator for the "node_id" field. It is called by the builders before save.
+	metadata.NodeIDValidator = metadataDescNodeID.Validators[0].(func(string) error)
 	// metadataDescID is the schema descriptor for id field.
 	metadataDescID := metadataFields[0].Descriptor()
 	// metadata.DefaultID holds the default value on creation for the id field.
@@ -112,6 +124,14 @@ func init() {
 	status.DefaultUpdatedAt = statusDescUpdatedAt.Default.(func() time.Time)
 	// status.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	status.UpdateDefaultUpdatedAt = statusDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// statusDescMetadataID is the schema descriptor for metadata_id field.
+	statusDescMetadataID := statusFields[1].Descriptor()
+	// status.MetadataIDValidator is a validator for the "metadata_id" field. It is called by the builders before save.
+	status.MetadataIDValidator = statusDescMetadataID.Validators[0].(func(string) error)
+	// statusDescStatusNamespaceID is the schema descriptor for status_namespace_id field.
+	statusDescStatusNamespaceID := statusFields[2].Descriptor()
+	// status.StatusNamespaceIDValidator is a validator for the "status_namespace_id" field. It is called by the builders before save.
+	status.StatusNamespaceIDValidator = statusDescStatusNamespaceID.Validators[0].(func(string) error)
 	// statusDescSource is the schema descriptor for source field.
 	statusDescSource := statusFields[3].Descriptor()
 	// status.SourceValidator is a validator for the "source" field. It is called by the builders before save.

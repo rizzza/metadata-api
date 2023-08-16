@@ -15,19 +15,26 @@ import (
 // StatusUpdate is the resolver for the statusUpdate field.
 func (r *mutationResolver) StatusUpdate(ctx context.Context, input StatusUpdateInput) (*StatusUpdateResponse, error) {
 	// TODO: authz check here
+
+	_, err := r.client.StatusNamespace.Get(ctx, input.NamespaceID)
+	if err != nil {
+		return nil, err
+	}
+
 	status, err := r.client.Status.Query().Where(
 		status.HasMetadataWith(metadata.NodeID(input.NodeID)),
 		status.StatusNamespaceID(input.NamespaceID),
 		status.Source(input.Source),
 	).First(ctx)
 	if err != nil {
-		// TODO: check that error is the annotation doesn't exist
-
 		md, err := r.client.Metadata.Query().Where(metadata.NodeID(input.NodeID)).First(ctx)
 		if err != nil {
-			// TODO: check that error is the metadata doesn't exist, otherwise return err
-			md, err = r.client.Metadata.Create().SetNodeID(input.NodeID).Save(ctx)
-			if err != nil {
+			if generated.IsNotFound(err) {
+				md, err = r.client.Metadata.Create().SetNodeID(input.NodeID).Save(ctx)
+				if err != nil {
+					return nil, err
+				}
+			} else {
 				return nil, err
 			}
 		}

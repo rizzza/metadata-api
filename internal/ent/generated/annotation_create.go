@@ -177,6 +177,11 @@ func (ac *AnnotationCreate) check() error {
 	if _, ok := ac.mutation.AnnotationNamespaceID(); !ok {
 		return &ValidationError{Name: "annotation_namespace_id", err: errors.New(`generated: missing required field "Annotation.annotation_namespace_id"`)}
 	}
+	if v, ok := ac.mutation.AnnotationNamespaceID(); ok {
+		if err := annotation.AnnotationNamespaceIDValidator(string(v)); err != nil {
+			return &ValidationError{Name: "annotation_namespace_id", err: fmt.Errorf(`generated: validator failed for field "Annotation.annotation_namespace_id": %w`, err)}
+		}
+	}
 	if _, ok := ac.mutation.Data(); !ok {
 		return &ValidationError{Name: "data", err: errors.New(`generated: missing required field "Annotation.data"`)}
 	}

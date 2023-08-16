@@ -34,6 +34,7 @@ func (Metadata) Fields() []ent.Field {
 		field.String("node_id").
 			Comment("ID of the node for this metadata").
 			GoType(gidx.PrefixedID("")).
+			NotEmpty().
 			Unique().
 			Immutable().
 			Annotations(

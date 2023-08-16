@@ -49,6 +49,7 @@ func (Annotation) Fields() []ent.Field {
 		field.String("annotation_namespace_id").
 			Comment("ID of the AnnotationNamespace of this annotation.").
 			GoType(gidx.PrefixedID("")).
+			NotEmpty().
 			Immutable().
 			Annotations(
 				entgql.Type("ID"),

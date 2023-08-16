@@ -43,6 +43,7 @@ func (AnnotationNamespace) Fields() []ent.Field {
 			),
 		field.String("owner_id").
 			GoType(gidx.PrefixedID("")).
+			NotEmpty().
 			Immutable().
 			Comment("The ID for the owner for this annotation namespace.").
 			Annotations(

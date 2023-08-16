@@ -47,6 +47,12 @@ func TestAnnotationUpdate(t *testing.T) {
 			NamespaceID: gidx.MustNewID("notreal"),
 			ErrorMsg:    "constraint failed", // TODO: This should have a better error message
 		},
+		{
+			TestName:    "Fails when namespace is empty",
+			NodeID:      gidx.MustNewID("testing"),
+			NamespaceID: "",
+			ErrorMsg:    "value is less than the required length",
+		},
 	}
 
 	for _, tt := range testCases {

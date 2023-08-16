@@ -38,6 +38,7 @@ func (Status) Fields() []ent.Field {
 		field.String("metadata_id").
 			Comment("ID of the metadata of this status").
 			GoType(gidx.PrefixedID("")).
+			NotEmpty().
 			Immutable().
 			Annotations(
 				entgql.Type("ID"),
@@ -47,6 +48,7 @@ func (Status) Fields() []ent.Field {
 		field.String("status_namespace_id").
 			GoType(gidx.PrefixedID("")).
 			Immutable().
+			NotEmpty().
 			Annotations(
 				entgql.Type("ID"),
 				entgql.Skip(entgql.SkipWhereInput, entgql.SkipMutationUpdateInput),

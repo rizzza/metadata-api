@@ -175,6 +175,11 @@ func (mc *MetadataCreate) check() error {
 	if _, ok := mc.mutation.NodeID(); !ok {
 		return &ValidationError{Name: "node_id", err: errors.New(`generated: missing required field "Metadata.node_id"`)}
 	}
+	if v, ok := mc.mutation.NodeID(); ok {
+		if err := metadata.NodeIDValidator(string(v)); err != nil {
+			return &ValidationError{Name: "node_id", err: fmt.Errorf(`generated: validator failed for field "Metadata.node_id": %w`, err)}
+		}
+	}
 	return nil
 }
 

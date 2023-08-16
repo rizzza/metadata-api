@@ -26,13 +26,18 @@ func TestAnnotationNamespacesCreate(t *testing.T) {
 			AnnotationNamespaceInput: testclient.CreateAnnotationNamespaceInput{Name: gofakeit.DomainName(), OwnerID: gidx.MustNewID("testing")},
 		},
 		{
-			TestName:                 "Successful even when name is in use by another tenant",
+			TestName:                 "Successful even when name is in use by another owner",
 			AnnotationNamespaceInput: testclient.CreateAnnotationNamespaceInput{Name: ns1.Name, OwnerID: gidx.MustNewID("tprefix")},
 		},
 		{
-			TestName:                 "Failed when name is in use by same tenant",
+			TestName:                 "Failed when name is in use by same owner",
 			AnnotationNamespaceInput: testclient.CreateAnnotationNamespaceInput{Name: ns1.Name, OwnerID: ns1.OwnerID},
 			ErrorMsg:                 "constraint failed", // TODO: This should have a better error message
+		},
+		{
+			TestName:                 "Fails when owner is empty",
+			AnnotationNamespaceInput: testclient.CreateAnnotationNamespaceInput{Name: ns1.Name, OwnerID: ""},
+			ErrorMsg:                 "value is less than the required length", // TODO: This should have a better error message
 		},
 	}
 

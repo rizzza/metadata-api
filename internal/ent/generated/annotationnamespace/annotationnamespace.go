@@ -81,6 +81,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
+	// OwnerIDValidator is a validator for the "owner_id" field. It is called by the builders before save.
+	OwnerIDValidator func(string) error
 	// DefaultPrivate holds the default value on creation for the "private" field.
 	DefaultPrivate bool
 	// DefaultID holds the default value on creation for the "id" field.

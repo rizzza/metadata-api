@@ -39,7 +39,7 @@ erDiagram
 
 ### Metadata
 
-Metadata is a top level structure that provides the connection to all metadata types for a `Node`. Any Graph `Node` that impliments the `Metadataable` interface can have metadata on it.
+Metadata is a top level structure that provides the connection to all metadata types for a `Node`. Any Graph `Node` that implements the `MetadataNode` interface can have metadata on it.
 
 ### Annotation Namespaces
 
@@ -55,7 +55,7 @@ Status Namespaces are similar to Annotation Namespaces except they belong to a `
 
 ### Statuses
 
-Statuses store data the same way that Annotations do. Becuase a status field may need to be reported from multiple sources we provide a source field to allow the same namespace to be used for statuses. An example of where this would be important is for a `LoadBalancer` you may have it running in multiple locations. As such you will want to report each location with it's own status and be able to track those independently.
+Statuses store data the same way that Annotations do. Because a status field may need to be reported from multiple sources we provide a source field to allow the same namespace to be used for statuses. An example of where this would be important is for a `LoadBalancer` you may have it running in multiple locations. As such you will want to report each location with it's own status and be able to track those independently.
 
 ## Development and Contributing
 
@@ -84,7 +84,7 @@ make go-run
 
 ## Contact
 
-To contact the maintainers, please open a [GithHub Issue](https://github.com/infratographer/metadata-api/issues/new)
+To contact the maintainers, please open a [GitHub Issue](https://github.com/infratographer/metadata-api/issues/new)
 
 ## License
 

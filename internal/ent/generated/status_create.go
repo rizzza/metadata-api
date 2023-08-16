@@ -180,8 +180,18 @@ func (sc *StatusCreate) check() error {
 	if _, ok := sc.mutation.MetadataID(); !ok {
 		return &ValidationError{Name: "metadata_id", err: errors.New(`generated: missing required field "Status.metadata_id"`)}
 	}
+	if v, ok := sc.mutation.MetadataID(); ok {
+		if err := status.MetadataIDValidator(string(v)); err != nil {
+			return &ValidationError{Name: "metadata_id", err: fmt.Errorf(`generated: validator failed for field "Status.metadata_id": %w`, err)}
+		}
+	}
 	if _, ok := sc.mutation.StatusNamespaceID(); !ok {
 		return &ValidationError{Name: "status_namespace_id", err: errors.New(`generated: missing required field "Status.status_namespace_id"`)}
+	}
+	if v, ok := sc.mutation.StatusNamespaceID(); ok {
+		if err := status.StatusNamespaceIDValidator(string(v)); err != nil {
+			return &ValidationError{Name: "status_namespace_id", err: fmt.Errorf(`generated: validator failed for field "Status.status_namespace_id": %w`, err)}
+		}
 	}
 	if _, ok := sc.mutation.Source(); !ok {
 		return &ValidationError{Name: "source", err: errors.New(`generated: missing required field "Status.source"`)}

@@ -91,6 +91,10 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// MetadataIDValidator is a validator for the "metadata_id" field. It is called by the builders before save.
+	MetadataIDValidator func(string) error
+	// StatusNamespaceIDValidator is a validator for the "status_namespace_id" field. It is called by the builders before save.
+	StatusNamespaceIDValidator func(string) error
 	// SourceValidator is a validator for the "source" field. It is called by the builders before save.
 	SourceValidator func(string) error
 	// DefaultID holds the default value on creation for the "id" field.
