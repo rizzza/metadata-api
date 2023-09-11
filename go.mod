@@ -20,7 +20,7 @@ require (
 	github.com/testcontainers/testcontainers-go v0.21.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.21.0
 	github.com/vektah/gqlparser/v2 v2.5.8
-	github.com/wundergraph/graphql-go-tools v1.62.3
+	github.com/wundergraph/graphql-go-tools v1.66.3
 	go.infratographer.com/x v0.3.4
 	go.uber.org/zap v1.24.0
 )
