@@ -28,7 +28,40 @@ metadata.sqlite
 
 # binary
 metadata-api
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories (remove the comment below to include it)
+vendor/
+# Files used in the build and test in the CI environment
+.go/
+
+# Build artifacts
+bin/
+debugConfig.yaml
 
 # devcontainer artifacts
 .devcontainer/nats/resolver.conf
 .devcontainer/nsc
+
+# helm test
+test-output/
+
+# test coverage
+coverage.txt
+
+# vscode
+.vscode
+
+# binary
+metadata-api
