@@ -74,7 +74,7 @@ spec:
             - name: {{ .name }}
               value: {{ .value }}
           {{- end }}
-          {{- end }} 
+          {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ include "common.names.fullname" . }}-config
@@ -103,9 +103,9 @@ spec:
               path: /readyz
               port: http
           volumeMounts:
-            {{- if .Values.api.events.auth.secretName  }}
+            {{- if .Values.api.events.nats.credsSecretName  }}
             - name: events-creds
-              mountPath: /nats
+              mountPath: /event-creds
             {{- end }}
             {{- if .Values.api.db.certSecret }}
             - name: dbcerts
@@ -127,10 +127,10 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
-        {{- if .Values.api.events.auth.secretName  }}
+        {{- if .Values.api.events.nats.credsSecretName  }}
         - name: events-creds
           secret:
-            secretName: "{{ .Values.api.events.auth.secretName }}"
+            secretName: "{{ .Values.api.events.nats.credsSecretName }}"
         {{- end }}
         {{- if .Values.api.db.certSecret }}
         - name: dbcerts

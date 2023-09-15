@@ -44,7 +44,8 @@ func (Annotation) Fields() []ent.Field {
 			Annotations(
 				entgql.Type("ID"),
 				entgql.Skip(entgql.SkipWhereInput, entgql.SkipMutationUpdateInput),
-				entx.EventsHookAdditionalSubject(),
+				// TODO: implemement a way to add annotation to specify additional subjects
+				// entx.EventsHookAdditionalSubject(),
 			),
 		field.String("annotation_namespace_id").
 			Comment("ID of the AnnotationNamespace of this annotation.").
@@ -54,7 +55,8 @@ func (Annotation) Fields() []ent.Field {
 			Annotations(
 				entgql.Type("ID"),
 				entgql.Skip(^entgql.SkipMutationUpdateInput),
-				entx.EventsHookAdditionalSubject(),
+				// TODO: implement a way to add annotation to specify additional subjects
+				// entx.EventsHookAdditionalSubject()
 			),
 		field.JSON("data", json.RawMessage{}).
 			Comment("JSON formatted data of this annotation.").

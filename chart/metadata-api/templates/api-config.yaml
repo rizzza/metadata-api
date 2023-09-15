@@ -6,8 +6,15 @@ metadata:
   labels:
     {{- include "common.labels.standard" . | nindent 4 }}
 data:
-  METADATAAPI_EVENTS_PUBLISHER_PREFIX: "{{ .Values.api.events.topicPrefix }}"
-  METADATAAPI_EVENTS_PUBLISHER_URL: "{{ .Values.api.events.connectionURL }}"
+  METADATAAPI_EVENTS_NATS_URL: "{{ .Values.api.events.nats.url }}"
+  METADATAAPI_EVENTS_NATS_PUBLISHPREFIX: "{{ .Values.api.events.nats.publishPrefix }}"
+  METADATAAPI_EVENTS_NATS_QUEUEGROUP: "{{ .Values.api.events.nats.queueGroup }}"
+  METADATAAPI_EVENTS_NATS_SOURCE: "{{ .Values.api.events.nats.source }}"
+  METADATAAPI_EVENTS_NATS_CONNECTTIMEOUT: "{{ .Values.api.events.nats.connectTimeout }}"
+  METADATAAPI_EVENTS_NATS_SHUTDOWNTIMEOUT: "{{ .Values.api.events.nats.shutdownTimeout }}"
+{{- if .Values.api.events.nats.credsSecretName }}
+  LOADBALANCERAPI_EVENTS_NATS_CREDSFILE: "{{ .Values.api.events.nats.credsFile }}"
+{{- end }}
   METADATAAPI_OIDC_ENABLED: "{{ .Values.api.oidc.enabled }}"
   METADATAAPI_OIDC_AUDIENCE: "{{ .Values.api.oidc.audience }}"
   METADATAAPI_OIDC_ISSUER: "{{ .Values.api.oidc.issuer }}"

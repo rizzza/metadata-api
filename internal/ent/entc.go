@@ -22,8 +22,8 @@ import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent/entc"
 	"entgo.io/ent/entc/gen"
+	"entgo.io/ent/schema/field"
 	"go.infratographer.com/x/entx"
-	"go.infratographer.com/x/events"
 )
 
 func main() {
@@ -57,7 +57,11 @@ func main() {
 		entc.TemplateDir("./internal/ent/templates"),
 		entc.FeatureNames("intercept"),
 		entc.Dependency(
-			entc.DependencyType(&events.Publisher{}),
+			entc.DependencyName("EventsPublisher"),
+			entc.DependencyTypeInfo(&field.TypeInfo{
+				Ident:   "events.Connection",
+				PkgPath: "go.infratographer.com/x/events",
+			}),
 		),
 	}
 

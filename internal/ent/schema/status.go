@@ -43,7 +43,8 @@ func (Status) Fields() []ent.Field {
 			Annotations(
 				entgql.Type("ID"),
 				entgql.Skip(entgql.SkipWhereInput, entgql.SkipMutationUpdateInput),
-				entx.EventsHookAdditionalSubject(),
+				// TODO: implement a way to add annotation to specify additional subjects
+				// entx.EventsHookAdditionalSubject(),
 			),
 		field.String("status_namespace_id").
 			GoType(gidx.PrefixedID("")).
@@ -52,7 +53,8 @@ func (Status) Fields() []ent.Field {
 			Annotations(
 				entgql.Type("ID"),
 				entgql.Skip(entgql.SkipWhereInput, entgql.SkipMutationUpdateInput),
-				entx.EventsHookAdditionalSubject(),
+				// TODO: implement a way to add annotation to specify additional subjects
+				// entx.EventsHookAdditionalSubject(),
 			),
 		field.String("source").
 			Immutable().

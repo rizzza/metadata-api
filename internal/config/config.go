@@ -2,6 +2,7 @@
 package config
 
 import (
+	"go.infratographer.com/permissions-api/pkg/permissions"
 	"go.infratographer.com/x/crdbx"
 	"go.infratographer.com/x/echojwtx"
 	"go.infratographer.com/x/echox"
@@ -12,15 +13,11 @@ import (
 
 // AppConfig stores all the config values for our application
 var AppConfig struct {
-	AuthConfig echojwtx.AuthConfig
-	CRDB       crdbx.Config
-	Events     EventsConfig
-	Logging    loggingx.Config
-	Server     echox.Config
-	Tracing    otelx.Config
-}
-
-// EventsConfig stores the configuration for a tenant-api event publisher
-type EventsConfig struct {
-	Publisher events.PublisherConfig
+	OIDC        echojwtx.AuthConfig
+	CRDB        crdbx.Config
+	Events      events.Config
+	Permissions permissions.Config
+	Logging     loggingx.Config
+	Server      echox.Config
+	Tracing     otelx.Config
 }

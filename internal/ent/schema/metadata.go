@@ -38,7 +38,8 @@ func (Metadata) Fields() []ent.Field {
 			Unique().
 			Immutable().
 			Annotations(
-				entx.EventsHookAdditionalSubject(),
+				// TODO: implement a way to add annotation to specify additional subjects
+				// entx.EventsHookAdditionalSubject(),
 				entgql.Type("ID"),
 				entgql.Skip(entgql.SkipWhereInput, entgql.SkipMutationUpdateInput),
 			),
