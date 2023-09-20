@@ -6,14 +6,26 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.infratographer.com/permissions-api/pkg/permissions"
+	"go.infratographer.com/permissions-api/pkg/permissions/mockpermissions"
 	"go.infratographer.com/x/gidx"
 
-	testclient "go.infratographer.com/metadata-api/internal/testclient"
+	ent "go.infratographer.com/metadata-api/internal/ent/generated"
+	"go.infratographer.com/metadata-api/internal/testclient"
 )
 
 func TestAnnotationNamespacesCreate(t *testing.T) {
 	ctx := context.Background()
+	perms := new(mockpermissions.MockPermissions)
+	perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx = perms.ContextWithHandler(ctx)
+
+	// Permit request
+	ctx = context.WithValue(ctx, permissions.CheckerCtxKey, permissions.DefaultAllowChecker)
+
 	ns1 := AnnotationNamespaceBuilder{}.MustNew(ctx)
 
 	testCases := []struct {
@@ -61,6 +73,16 @@ func TestAnnotationNamespacesCreate(t *testing.T) {
 
 func TestAnnotationNamespacesDelete(t *testing.T) {
 	ctx := context.Background()
+	perms := new(mockpermissions.MockPermissions)
+
+	perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	perms.On("DeleteAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx = perms.ContextWithHandler(ctx)
+
+	// Permit request
+	ctx = context.WithValue(ctx, permissions.CheckerCtxKey, permissions.DefaultAllowChecker)
+
 	ns1 := AnnotationNamespaceBuilder{}.MustNew(ctx)
 	ns2 := AnnotationNamespaceBuilder{}.MustNew(ctx)
 	ns3 := AnnotationNamespaceBuilder{}.MustNew(ctx)
@@ -114,6 +136,15 @@ func TestAnnotationNamespacesDelete(t *testing.T) {
 
 func TestAnnotationNamespacesUpdate(t *testing.T) {
 	ctx := context.Background()
+	perms := new(mockpermissions.MockPermissions)
+
+	perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx = perms.ContextWithHandler(ctx)
+
+	// Permit request
+	ctx = context.WithValue(ctx, permissions.CheckerCtxKey, permissions.DefaultAllowChecker)
+
 	ns := AnnotationNamespaceBuilder{}.MustNew(ctx)
 	ns2 := AnnotationNamespaceBuilder{OwnerID: ns.OwnerID}.MustNew(ctx)
 
@@ -155,6 +186,50 @@ func TestAnnotationNamespacesUpdate(t *testing.T) {
 			require.NoError(t, err)
 			assert.NotNil(t, resp.AnnotationNamespaceUpdate.AnnotationNamespace)
 			assert.Equal(t, tt.NewName, resp.AnnotationNamespaceUpdate.AnnotationNamespace.Name)
+		})
+	}
+}
+
+func TestAnnotationNamespacesGet(t *testing.T) {
+	ctx := context.Background()
+	perms := new(mockpermissions.MockPermissions)
+
+	perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx = perms.ContextWithHandler(ctx)
+
+	// Permit request
+	ctx = context.WithValue(ctx, permissions.CheckerCtxKey, permissions.DefaultAllowChecker)
+
+	ns1 := AnnotationNamespaceBuilder{}.MustNew(ctx)
+
+	testCases := []struct {
+		TestName   string
+		QueryID    gidx.PrefixedID
+		ExpectedLB *ent.AnnotationNamespace
+		ErrorMsg   string
+	}{
+		{
+			TestName:   "Successful path",
+			QueryID:    ns1.ID,
+			ExpectedLB: ns1,
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.TestName, func(t *testing.T) {
+			resp, err := graphTestClient().GetAnnotationNamespace(ctx, ns1.ID)
+
+			if tt.ErrorMsg != "" {
+				assert.Error(t, err)
+				assert.ErrorContains(t, err, tt.ErrorMsg)
+
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, resp)
+			assert.EqualValues(t, tt.ExpectedLB.Name, resp.AnnotationNamespace.Name)
 		})
 	}
 }

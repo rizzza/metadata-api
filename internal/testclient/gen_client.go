@@ -18,6 +18,7 @@ type TestClient interface {
 	AnnotationNamespaceDelete(ctx context.Context, id gidx.PrefixedID, force bool, httpRequestOptions ...client.HTTPRequestOption) (*AnnotationNamespaceDelete, error)
 	AnnotationNamespaceUpdate(ctx context.Context, id gidx.PrefixedID, input UpdateAnnotationNamespaceInput, httpRequestOptions ...client.HTTPRequestOption) (*AnnotationNamespaceUpdate, error)
 	AnnotationUpdate(ctx context.Context, input AnnotationUpdateInput, httpRequestOptions ...client.HTTPRequestOption) (*AnnotationUpdate, error)
+	GetAnnotationNamespace(ctx context.Context, annotationNamespaceID gidx.PrefixedID, httpRequestOptions ...client.HTTPRequestOption) (*GetAnnotationNamespace, error)
 	GetNodeMetadata(ctx context.Context, id gidx.PrefixedID, httpRequestOptions ...client.HTTPRequestOption) (*GetNodeMetadata, error)
 	GetResourceOwnerAnnotationNamespaces(ctx context.Context, id gidx.PrefixedID, orderBy *AnnotationNamespaceOrder, httpRequestOptions ...client.HTTPRequestOption) (*GetResourceOwnerAnnotationNamespaces, error)
 	GetResourceProviderStatusNamespaces(ctx context.Context, id gidx.PrefixedID, orderBy *StatusNamespaceOrder, httpRequestOptions ...client.HTTPRequestOption) (*GetResourceProviderStatusNamespaces, error)
@@ -112,6 +113,24 @@ type AnnotationUpdate struct {
 			UpdatedAt time.Time       "json:\"updatedAt\" graphql:\"updatedAt\""
 		} "json:\"annotation\" graphql:\"annotation\""
 	} "json:\"annotationUpdate\" graphql:\"annotationUpdate\""
+}
+type GetAnnotationNamespace struct {
+	AnnotationNamespace struct {
+		ID      gidx.PrefixedID "json:\"id\" graphql:\"id\""
+		Name    string          "json:\"name\" graphql:\"name\""
+		Private bool            "json:\"private\" graphql:\"private\""
+		Owner   struct {
+			ID gidx.PrefixedID "json:\"id\" graphql:\"id\""
+		} "json:\"owner\" graphql:\"owner\""
+		Annotations []*struct {
+			ID        gidx.PrefixedID "json:\"id\" graphql:\"id\""
+			Data      json.RawMessage "json:\"data\" graphql:\"data\""
+			CreatedAt time.Time       "json:\"createdAt\" graphql:\"createdAt\""
+			UpdatedAt time.Time       "json:\"updatedAt\" graphql:\"updatedAt\""
+		} "json:\"annotations\" graphql:\"annotations\""
+		CreatedAt time.Time "json:\"createdAt\" graphql:\"createdAt\""
+		UpdatedAt time.Time "json:\"updatedAt\" graphql:\"updatedAt\""
+	} "json:\"annotationNamespace\" graphql:\"annotationNamespace\""
 }
 type GetNodeMetadata struct {
 	Entities []*struct {
@@ -352,6 +371,39 @@ func (c *Client) AnnotationUpdate(ctx context.Context, input AnnotationUpdateInp
 
 	var res AnnotationUpdate
 	if err := c.Client.Post(ctx, "AnnotationUpdate", AnnotationUpdateDocument, &res, vars, httpRequestOptions...); err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+const GetAnnotationNamespaceDocument = `query GetAnnotationNamespace ($annotationNamespaceId: ID!) {
+	annotationNamespace(id: $annotationNamespaceId) {
+		id
+		name
+		private
+		owner {
+			id
+		}
+		annotations {
+			id
+			data
+			createdAt
+			updatedAt
+		}
+		createdAt
+		updatedAt
+	}
+}
+`
+
+func (c *Client) GetAnnotationNamespace(ctx context.Context, annotationNamespaceID gidx.PrefixedID, httpRequestOptions ...client.HTTPRequestOption) (*GetAnnotationNamespace, error) {
+	vars := map[string]interface{}{
+		"annotationNamespaceId": annotationNamespaceID,
+	}
+
+	var res GetAnnotationNamespace
+	if err := c.Client.Post(ctx, "GetAnnotationNamespace", GetAnnotationNamespaceDocument, &res, vars, httpRequestOptions...); err != nil {
 		return nil, err
 	}
 

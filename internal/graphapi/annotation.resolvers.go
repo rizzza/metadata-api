@@ -9,11 +9,15 @@ import (
 
 	"go.infratographer.com/metadata-api/internal/ent/generated/annotation"
 	"go.infratographer.com/metadata-api/internal/ent/generated/metadata"
+	"go.infratographer.com/permissions-api/pkg/permissions"
 )
 
 // AnnotationUpdate is the resolver for the annotationUpdate field.
 func (r *mutationResolver) AnnotationUpdate(ctx context.Context, input AnnotationUpdateInput) (*AnnotationUpdateResponse, error) {
-	// TODO: authz check here
+	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataAnnotationNamespaceUpdate); err != nil {
+		return nil, err
+	}
+
 	ant, err := r.client.Annotation.Query().Where(
 		annotation.AnnotationNamespaceID(input.NamespaceID),
 		annotation.HasMetadataWith(metadata.NodeID(input.NodeID)),
@@ -48,6 +52,10 @@ func (r *mutationResolver) AnnotationUpdate(ctx context.Context, input Annotatio
 
 // AnnotationDelete is the resolver for the annotationDelete field.
 func (r *mutationResolver) AnnotationDelete(ctx context.Context, input AnnotationDeleteInput) (*AnnotationDeleteResponse, error) {
+	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataAnnotationNamespaceDelete); err != nil {
+		return nil, err
+	}
+
 	ant, err := r.client.Annotation.Query().Where(
 		annotation.AnnotationNamespaceID(input.NamespaceID),
 		annotation.HasMetadataWith(metadata.NodeID(input.NodeID)),

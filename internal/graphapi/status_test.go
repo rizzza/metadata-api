@@ -8,6 +8,8 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.infratographer.com/permissions-api/pkg/permissions"
+	"go.infratographer.com/permissions-api/pkg/permissions/mockpermissions"
 	"go.infratographer.com/x/gidx"
 
 	"go.infratographer.com/metadata-api/internal/ent/generated/metadata"
@@ -17,6 +19,13 @@ import (
 
 func TestStatusUpdate(t *testing.T) {
 	ctx := context.Background()
+
+	perms := new(mockpermissions.MockPermissions)
+	ctx = perms.ContextWithHandler(ctx)
+
+	// Permit request
+	ctx = context.WithValue(ctx, permissions.CheckerCtxKey, permissions.DefaultAllowChecker)
+
 	meta1 := MetadataBuilder{}.MustNew(ctx)
 	st1 := StatusBuilder{Metadata: meta1}.MustNew(ctx)
 
@@ -93,6 +102,13 @@ func TestStatusUpdate(t *testing.T) {
 
 func TestStatusDelete(t *testing.T) {
 	ctx := context.Background()
+
+	perms := new(mockpermissions.MockPermissions)
+	ctx = perms.ContextWithHandler(ctx)
+
+	// Permit request
+	ctx = context.WithValue(ctx, permissions.CheckerCtxKey, permissions.DefaultAllowChecker)
+
 	meta1 := MetadataBuilder{}.MustNew(ctx)
 	st1 := StatusBuilder{Metadata: meta1}.MustNew(ctx)
 	st2 := StatusBuilder{Metadata: meta1}.MustNew(ctx)

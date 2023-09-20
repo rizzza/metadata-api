@@ -10,11 +10,14 @@ import (
 	"go.infratographer.com/metadata-api/internal/ent/generated"
 	"go.infratographer.com/metadata-api/internal/ent/generated/metadata"
 	"go.infratographer.com/metadata-api/internal/ent/generated/status"
+	"go.infratographer.com/permissions-api/pkg/permissions"
 )
 
 // StatusUpdate is the resolver for the statusUpdate field.
 func (r *mutationResolver) StatusUpdate(ctx context.Context, input StatusUpdateInput) (*StatusUpdateResponse, error) {
-	// TODO: authz check here
+	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataStatusNamespaceUpdate); err != nil {
+		return nil, err
+	}
 
 	_, err := r.client.StatusNamespace.Get(ctx, input.NamespaceID)
 	if err != nil {
@@ -62,6 +65,10 @@ func (r *mutationResolver) StatusUpdate(ctx context.Context, input StatusUpdateI
 
 // StatusDelete is the resolver for the statusDelete field.
 func (r *mutationResolver) StatusDelete(ctx context.Context, input StatusDeleteInput) (*StatusDeleteResponse, error) {
+	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataStatusNamespaceDelete); err != nil {
+		return nil, err
+	}
+
 	st, err := r.client.Status.Query().Where(
 		status.HasMetadataWith(metadata.NodeID(input.NodeID)),
 		status.StatusNamespaceID(input.NamespaceID),

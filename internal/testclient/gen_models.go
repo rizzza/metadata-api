@@ -283,7 +283,7 @@ type CreateStatusInput struct {
 type CreateStatusNamespaceInput struct {
 	// The name of the status namespace.
 	Name string `json:"name"`
-	// The ID for the tenant for this status namespace.
+	// The ID of the resource provider for this status namespace.
 	ResourceProviderID gidx.PrefixedID `json:"resourceProviderID"`
 	// Flag for if this namespace is private.
 	Private *bool `json:"private,omitempty"`

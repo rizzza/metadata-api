@@ -159,6 +159,10 @@ func init() {
 	statusnamespaceDescName := statusnamespaceFields[1].Descriptor()
 	// statusnamespace.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	statusnamespace.NameValidator = statusnamespaceDescName.Validators[0].(func(string) error)
+	// statusnamespaceDescResourceProviderID is the schema descriptor for resource_provider_id field.
+	statusnamespaceDescResourceProviderID := statusnamespaceFields[2].Descriptor()
+	// statusnamespace.ResourceProviderIDValidator is a validator for the "resource_provider_id" field. It is called by the builders before save.
+	statusnamespace.ResourceProviderIDValidator = statusnamespaceDescResourceProviderID.Validators[0].(func(string) error)
 	// statusnamespaceDescPrivate is the schema descriptor for private field.
 	statusnamespaceDescPrivate := statusnamespaceFields[3].Descriptor()
 	// statusnamespace.DefaultPrivate holds the default value on creation for the private field.

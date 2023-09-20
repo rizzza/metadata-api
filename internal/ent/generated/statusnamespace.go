@@ -39,7 +39,7 @@ type StatusNamespace struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// The name of the status namespace.
 	Name string `json:"name,omitempty"`
-	// The ID for the tenant for this status namespace.
+	// The ID of the resource provider for this status namespace.
 	ResourceProviderID gidx.PrefixedID `json:"resource_provider_id,omitempty"`
 	// Flag for if this namespace is private.
 	Private bool `json:"private,omitempty"`

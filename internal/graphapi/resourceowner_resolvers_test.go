@@ -5,7 +5,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.infratographer.com/permissions-api/pkg/permissions"
+	"go.infratographer.com/permissions-api/pkg/permissions/mockpermissions"
 	"go.infratographer.com/x/gidx"
 
 	ent "go.infratographer.com/metadata-api/internal/ent/generated"
@@ -14,6 +17,15 @@ import (
 
 func TestTenantAnnotationNamespaces(t *testing.T) {
 	ctx := context.Background()
+
+	perms := new(mockpermissions.MockPermissions)
+	ctx = perms.ContextWithHandler(ctx)
+
+	perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	// Permit request
+	ctx = context.WithValue(ctx, permissions.CheckerCtxKey, permissions.DefaultAllowChecker)
+
 	ownerID := gidx.MustNewID("testing")
 	antColors := AnnotationNamespaceBuilder{OwnerID: ownerID, Name: "nicole.dev/colors"}.MustNew(ctx)
 	antPeople := AnnotationNamespaceBuilder{OwnerID: ownerID, Name: "nicole.dev/people"}.MustNew(ctx)

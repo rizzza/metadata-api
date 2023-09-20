@@ -44,7 +44,8 @@ func (StatusNamespace) Fields() []ent.Field {
 		field.String("resource_provider_id").
 			GoType(gidx.PrefixedID("")).
 			Immutable().
-			Comment("The ID for the tenant for this status namespace.").
+			NotEmpty().
+			Comment("The ID of the resource provider for this status namespace.").
 			Annotations(
 				entgql.QueryField(),
 				entgql.Type("ID"),

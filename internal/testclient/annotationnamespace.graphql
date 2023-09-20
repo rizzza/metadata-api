@@ -19,6 +19,25 @@ query GetResourceOwnerAnnotationNamespaces(
   }
 }
 
+query GetAnnotationNamespace($annotationNamespaceId: ID!) {
+  annotationNamespace(id: $annotationNamespaceId) {
+    id
+    name
+    private
+    owner {
+      id
+    }
+    annotations {
+      id
+      data
+      createdAt
+      updatedAt
+    }
+    createdAt
+    updatedAt
+  }
+}
+
 mutation AnnotationNamespaceCreate($input: CreateAnnotationNamespaceInput!) {
   annotationNamespaceCreate(input: $input) {
     annotationNamespace {

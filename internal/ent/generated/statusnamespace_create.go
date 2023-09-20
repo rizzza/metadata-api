@@ -191,6 +191,11 @@ func (snc *StatusNamespaceCreate) check() error {
 	if _, ok := snc.mutation.ResourceProviderID(); !ok {
 		return &ValidationError{Name: "resource_provider_id", err: errors.New(`generated: missing required field "StatusNamespace.resource_provider_id"`)}
 	}
+	if v, ok := snc.mutation.ResourceProviderID(); ok {
+		if err := statusnamespace.ResourceProviderIDValidator(string(v)); err != nil {
+			return &ValidationError{Name: "resource_provider_id", err: fmt.Errorf(`generated: validator failed for field "StatusNamespace.resource_provider_id": %w`, err)}
+		}
+	}
 	if _, ok := snc.mutation.Private(); !ok {
 		return &ValidationError{Name: "private", err: errors.New(`generated: missing required field "StatusNamespace.private"`)}
 	}
