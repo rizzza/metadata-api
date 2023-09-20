@@ -51,8 +51,7 @@ func (StatusNamespace) Fields() []ent.Field {
 				entgql.Type("ID"),
 				entgql.Skip(entgql.SkipWhereInput, entgql.SkipMutationUpdateInput, entgql.SkipType),
 				entgql.OrderField("RESOURCEPROVIDER"),
-				// TODO: implement a way to add annotation to specify additional subjects
-				// entx.EventsHookAdditionalSubject(),
+				entx.EventsHookAdditionalSubject("resource_provider"),
 			),
 		field.Bool("private").
 			Default(false).
