@@ -9,15 +9,16 @@ import (
 	"database/sql"
 	"fmt"
 
-	"go.infratographer.com/metadata-api/internal/ent/generated"
-	"go.infratographer.com/metadata-api/internal/ent/generated/annotation"
 	"go.infratographer.com/permissions-api/pkg/permissions"
 	"go.infratographer.com/x/gidx"
+
+	"go.infratographer.com/metadata-api/internal/ent/generated"
+	"go.infratographer.com/metadata-api/internal/ent/generated/annotation"
 )
 
 // AnnotationNamespaceCreate is the resolver for the annotationNamespaceCreate field.
 func (r *mutationResolver) AnnotationNamespaceCreate(ctx context.Context, input generated.CreateAnnotationNamespaceInput) (*AnnotationNamespaceCreatePayload, error) {
-	if err := permissions.CheckAccess(ctx, input.OwnerID, actionMetadataAnnotationNamespaceCreate); err != nil {
+	if err := permissions.CheckAccess(ctx, input.OwnerID, actionMetadataAnnotationNamespaceAll); err != nil {
 		return nil, err
 	}
 
@@ -31,7 +32,7 @@ func (r *mutationResolver) AnnotationNamespaceCreate(ctx context.Context, input 
 
 // AnnotationNamespaceDelete is the resolver for the annotationNamespaceDelete field.
 func (r *mutationResolver) AnnotationNamespaceDelete(ctx context.Context, id gidx.PrefixedID, force bool) (*AnnotationNamespaceDeletePayload, error) {
-	if err := permissions.CheckAccess(ctx, id, actionMetadataAnnotationNamespaceDelete); err != nil {
+	if err := permissions.CheckAccess(ctx, id, actionMetadataAnnotationNamespaceAll); err != nil {
 		return nil, err
 	}
 
@@ -77,7 +78,7 @@ func (r *mutationResolver) AnnotationNamespaceDelete(ctx context.Context, id gid
 
 // AnnotationNamespaceUpdate is the resolver for the annotationNamespaceUpdate field.
 func (r *mutationResolver) AnnotationNamespaceUpdate(ctx context.Context, id gidx.PrefixedID, input generated.UpdateAnnotationNamespaceInput) (*AnnotationNamespaceUpdatePayload, error) {
-	if err := permissions.CheckAccess(ctx, id, actionMetadataAnnotationNamespaceUpdate); err != nil {
+	if err := permissions.CheckAccess(ctx, id, actionMetadataAnnotationNamespaceAll); err != nil {
 		return nil, err
 	}
 
@@ -96,7 +97,7 @@ func (r *mutationResolver) AnnotationNamespaceUpdate(ctx context.Context, id gid
 
 // AnnotationNamespace is the resolver for the annotationNamespace field.
 func (r *queryResolver) AnnotationNamespace(ctx context.Context, id gidx.PrefixedID) (*generated.AnnotationNamespace, error) {
-	if err := permissions.CheckAccess(ctx, id, actionMetadataAnnotationNamespaceGet); err != nil {
+	if err := permissions.CheckAccess(ctx, id, actionMetadataAnnotationNamespaceAll); err != nil {
 		return nil, err
 	}
 

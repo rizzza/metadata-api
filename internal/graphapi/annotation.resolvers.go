@@ -7,14 +7,15 @@ package graphapi
 import (
 	"context"
 
+	"go.infratographer.com/permissions-api/pkg/permissions"
+
 	"go.infratographer.com/metadata-api/internal/ent/generated/annotation"
 	"go.infratographer.com/metadata-api/internal/ent/generated/metadata"
-	"go.infratographer.com/permissions-api/pkg/permissions"
 )
 
 // AnnotationUpdate is the resolver for the annotationUpdate field.
 func (r *mutationResolver) AnnotationUpdate(ctx context.Context, input AnnotationUpdateInput) (*AnnotationUpdateResponse, error) {
-	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataAnnotationNamespaceUpdate); err != nil {
+	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataAnnotationNamespaceAll); err != nil {
 		return nil, err
 	}
 
@@ -52,7 +53,7 @@ func (r *mutationResolver) AnnotationUpdate(ctx context.Context, input Annotatio
 
 // AnnotationDelete is the resolver for the annotationDelete field.
 func (r *mutationResolver) AnnotationDelete(ctx context.Context, input AnnotationDeleteInput) (*AnnotationDeleteResponse, error) {
-	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataAnnotationNamespaceDelete); err != nil {
+	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataAnnotationNamespaceAll); err != nil {
 		return nil, err
 	}
 

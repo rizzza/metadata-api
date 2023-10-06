@@ -5,7 +5,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.infratographer.com/permissions-api/pkg/permissions"
+	"go.infratographer.com/permissions-api/pkg/permissions/mockpermissions"
 	"go.infratographer.com/x/gidx"
 
 	ent "go.infratographer.com/metadata-api/internal/ent/generated"
@@ -14,6 +17,15 @@ import (
 
 func TestResourceProviderStatusNamespaces(t *testing.T) {
 	ctx := context.Background()
+	perms := new(mockpermissions.MockPermissions)
+
+	perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx = perms.ContextWithHandler(ctx)
+
+	// Permit request
+	ctx = context.WithValue(ctx, permissions.CheckerCtxKey, permissions.DefaultAllowChecker)
+
 	rpID := gidx.MustNewID("testing")
 	stColors := StatusNamespaceBuilder{ResourceProviderID: rpID, Name: "instance.infratographer.com/colors"}.MustNew(ctx)
 	stPeople := StatusNamespaceBuilder{ResourceProviderID: rpID, Name: "instance.infratographer.com/people"}.MustNew(ctx)
