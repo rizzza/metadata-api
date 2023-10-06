@@ -278,11 +278,15 @@ func (ac *AnnotationCreate) createSpec() (*Annotation, *sqlgraph.CreateSpec) {
 // AnnotationCreateBulk is the builder for creating many Annotation entities in bulk.
 type AnnotationCreateBulk struct {
 	config
+	err      error
 	builders []*AnnotationCreate
 }
 
 // Save creates the Annotation entities in the database.
 func (acb *AnnotationCreateBulk) Save(ctx context.Context) ([]*Annotation, error) {
+	if acb.err != nil {
+		return nil, acb.err
+	}
 	specs := make([]*sqlgraph.CreateSpec, len(acb.builders))
 	nodes := make([]*Annotation, len(acb.builders))
 	mutators := make([]Mutator, len(acb.builders))

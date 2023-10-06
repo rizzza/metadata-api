@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"reflect"
 
 	"go.infratographer.com/metadata-api/internal/ent/generated/migrate"
 
@@ -145,11 +146,14 @@ func Open(driverName, dataSourceName string, options ...Option) (*Client, error)
 	}
 }
 
+// ErrTxStarted is returned when trying to start a new transaction from a transactional client.
+var ErrTxStarted = errors.New("generated: cannot start a transaction within a transaction")
+
 // Tx returns a new transactional client. The provided context
 // is used until the transaction is committed or rolled back.
 func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	if _, ok := c.driver.(*txDriver); ok {
-		return nil, errors.New("generated: cannot start a transaction within a transaction")
+		return nil, ErrTxStarted
 	}
 	tx, err := newTx(ctx, c.driver)
 	if err != nil {
@@ -282,6 +286,21 @@ func (c *AnnotationClient) Create() *AnnotationCreate {
 
 // CreateBulk returns a builder for creating a bulk of Annotation entities.
 func (c *AnnotationClient) CreateBulk(builders ...*AnnotationCreate) *AnnotationCreateBulk {
+	return &AnnotationCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AnnotationClient) MapCreateBulk(slice any, setFunc func(*AnnotationCreate, int)) *AnnotationCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AnnotationCreateBulk{err: fmt.Errorf("calling to AnnotationClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AnnotationCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
 	return &AnnotationCreateBulk{config: c.config, builders: builders}
 }
 
@@ -435,6 +454,21 @@ func (c *AnnotationNamespaceClient) CreateBulk(builders ...*AnnotationNamespaceC
 	return &AnnotationNamespaceCreateBulk{config: c.config, builders: builders}
 }
 
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AnnotationNamespaceClient) MapCreateBulk(slice any, setFunc func(*AnnotationNamespaceCreate, int)) *AnnotationNamespaceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AnnotationNamespaceCreateBulk{err: fmt.Errorf("calling to AnnotationNamespaceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AnnotationNamespaceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AnnotationNamespaceCreateBulk{config: c.config, builders: builders}
+}
+
 // Update returns an update builder for AnnotationNamespace.
 func (c *AnnotationNamespaceClient) Update() *AnnotationNamespaceUpdate {
 	mutation := newAnnotationNamespaceMutation(c.config, OpUpdate)
@@ -566,6 +600,21 @@ func (c *MetadataClient) Create() *MetadataCreate {
 
 // CreateBulk returns a builder for creating a bulk of Metadata entities.
 func (c *MetadataClient) CreateBulk(builders ...*MetadataCreate) *MetadataCreateBulk {
+	return &MetadataCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *MetadataClient) MapCreateBulk(slice any, setFunc func(*MetadataCreate, int)) *MetadataCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &MetadataCreateBulk{err: fmt.Errorf("calling to MetadataClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*MetadataCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
 	return &MetadataCreateBulk{config: c.config, builders: builders}
 }
 
@@ -719,6 +768,21 @@ func (c *StatusClient) CreateBulk(builders ...*StatusCreate) *StatusCreateBulk {
 	return &StatusCreateBulk{config: c.config, builders: builders}
 }
 
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *StatusClient) MapCreateBulk(slice any, setFunc func(*StatusCreate, int)) *StatusCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &StatusCreateBulk{err: fmt.Errorf("calling to StatusClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*StatusCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &StatusCreateBulk{config: c.config, builders: builders}
+}
+
 // Update returns an update builder for Status.
 func (c *StatusClient) Update() *StatusUpdate {
 	mutation := newStatusMutation(c.config, OpUpdate)
@@ -866,6 +930,21 @@ func (c *StatusNamespaceClient) Create() *StatusNamespaceCreate {
 
 // CreateBulk returns a builder for creating a bulk of StatusNamespace entities.
 func (c *StatusNamespaceClient) CreateBulk(builders ...*StatusNamespaceCreate) *StatusNamespaceCreateBulk {
+	return &StatusNamespaceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *StatusNamespaceClient) MapCreateBulk(slice any, setFunc func(*StatusNamespaceCreate, int)) *StatusNamespaceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &StatusNamespaceCreateBulk{err: fmt.Errorf("calling to StatusNamespaceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*StatusNamespaceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
 	return &StatusNamespaceCreateBulk{config: c.config, builders: builders}
 }
 
