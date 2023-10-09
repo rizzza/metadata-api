@@ -2,8 +2,8 @@ package graphapi
 
 const (
 	// metadata annotations owner access
-	actionMetadataAnnotationNamespaceAll = "metadata_annotationnamespace_all"
+	actionMetadataAnnotationNamespaceUpdate = "metadata_annotationnamespace_update"
 
 	// metadata status resource provider access
-	actionMetadataStatusNamespaceAll = "metadata_statusnamespace_all"
+	actionMetadataStatusNamespaceUpdate = "metadata_statusnamespace_update"
 )

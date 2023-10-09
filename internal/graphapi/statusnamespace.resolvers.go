@@ -9,15 +9,16 @@ import (
 	"database/sql"
 	"fmt"
 
-	"go.infratographer.com/metadata-api/internal/ent/generated"
-	"go.infratographer.com/metadata-api/internal/ent/generated/status"
 	"go.infratographer.com/permissions-api/pkg/permissions"
 	"go.infratographer.com/x/gidx"
+
+	"go.infratographer.com/metadata-api/internal/ent/generated"
+	"go.infratographer.com/metadata-api/internal/ent/generated/status"
 )
 
 // StatusNamespaceCreate is the resolver for the statusNamespaceCreate field.
 func (r *mutationResolver) StatusNamespaceCreate(ctx context.Context, input generated.CreateStatusNamespaceInput) (*StatusNamespaceCreatePayload, error) {
-	if err := permissions.CheckAccess(ctx, input.ResourceProviderID, actionMetadataStatusNamespaceAll); err != nil {
+	if err := permissions.CheckAccess(ctx, input.ResourceProviderID, actionMetadataStatusNamespaceUpdate); err != nil {
 		return nil, err
 	}
 
@@ -36,7 +37,7 @@ func (r *mutationResolver) StatusNamespaceDelete(ctx context.Context, id gidx.Pr
 		return nil, err
 	}
 
-	if err := permissions.CheckAccess(ctx, sns.ResourceProviderID, actionMetadataStatusNamespaceAll); err != nil {
+	if err := permissions.CheckAccess(ctx, sns.ResourceProviderID, actionMetadataStatusNamespaceUpdate); err != nil {
 		return nil, err
 	}
 
@@ -87,7 +88,7 @@ func (r *mutationResolver) StatusNamespaceUpdate(ctx context.Context, id gidx.Pr
 		return nil, err
 	}
 
-	if err := permissions.CheckAccess(ctx, sns.ResourceProviderID, actionMetadataStatusNamespaceAll); err != nil {
+	if err := permissions.CheckAccess(ctx, sns.ResourceProviderID, actionMetadataStatusNamespaceUpdate); err != nil {
 		return nil, err
 	}
 
