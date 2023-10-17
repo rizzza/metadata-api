@@ -51,7 +51,7 @@ func (StatusNamespace) Fields() []ent.Field {
 				entgql.Type("ID"),
 				entgql.Skip(entgql.SkipWhereInput, entgql.SkipMutationUpdateInput, entgql.SkipType),
 				entgql.OrderField("RESOURCEPROVIDER"),
-				entx.EventsHookAdditionalSubject("resource_provider"),
+				entx.EventsHookAdditionalSubject("owner"),
 			),
 		field.Bool("private").
 			Default(false).

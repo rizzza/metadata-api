@@ -928,7 +928,7 @@ func StatusNamespaceHooks() []ent.Hook {
 					additionalSubjects = append(additionalSubjects, resource_provider_id)
 
 					relationships = append(relationships, events.AuthRelationshipRelation{
-						Relation:  "resource_provider",
+						Relation:  "owner",
 						SubjectID: resource_provider_id,
 					})
 
@@ -1023,7 +1023,7 @@ func StatusNamespaceHooks() []ent.Hook {
 					additionalSubjects = append(additionalSubjects, dbObj.ResourceProviderID)
 
 					relationships = append(relationships, events.AuthRelationshipRelation{
-						Relation:  "resource_provider",
+						Relation:  "owner",
 						SubjectID: dbObj.ResourceProviderID,
 					})
 
