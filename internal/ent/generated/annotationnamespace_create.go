@@ -276,11 +276,15 @@ func (anc *AnnotationNamespaceCreate) createSpec() (*AnnotationNamespace, *sqlgr
 // AnnotationNamespaceCreateBulk is the builder for creating many AnnotationNamespace entities in bulk.
 type AnnotationNamespaceCreateBulk struct {
 	config
+	err      error
 	builders []*AnnotationNamespaceCreate
 }
 
 // Save creates the AnnotationNamespace entities in the database.
 func (ancb *AnnotationNamespaceCreateBulk) Save(ctx context.Context) ([]*AnnotationNamespace, error) {
+	if ancb.err != nil {
+		return nil, ancb.err
+	}
 	specs := make([]*sqlgraph.CreateSpec, len(ancb.builders))
 	nodes := make([]*AnnotationNamespace, len(ancb.builders))
 	mutators := make([]Mutator, len(ancb.builders))

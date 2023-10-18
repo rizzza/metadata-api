@@ -18,6 +18,7 @@ import (
 func TestStatusNamespacesCreate(t *testing.T) {
 	ctx := context.Background()
 	perms := new(mockpermissions.MockPermissions)
+	perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx = perms.ContextWithHandler(ctx)
 
@@ -72,6 +73,8 @@ func TestStatusNamespacesCreate(t *testing.T) {
 func TestStatusNamespacesDelete(t *testing.T) {
 	ctx := context.Background()
 	perms := new(mockpermissions.MockPermissions)
+	perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	perms.On("DeleteAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx = perms.ContextWithHandler(ctx)
 

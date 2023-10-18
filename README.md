@@ -21,7 +21,7 @@ erDiagram
     Annotation }o--|| Annotation-Namespace : "belongs to"
     Annotation-Namespace {
         string Name
-        id TenantID
+        id OwnerID
     }
 
     Metadata ||--o{ Status : "has"

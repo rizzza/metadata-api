@@ -918,6 +918,19 @@ func StatusNamespaceHooks() []ent.Hook {
 
 					cv_resource_provider_id := ""
 					resource_provider_id, ok := m.ResourceProviderID()
+					if !ok && !m.Op().Is(ent.OpCreate) {
+						// since we are doing an update or delete and these fields didn't change, load the "old" value
+						resource_provider_id, err = m.OldResourceProviderID(ctx)
+						if err != nil {
+							return nil, err
+						}
+					}
+					additionalSubjects = append(additionalSubjects, resource_provider_id)
+
+					relationships = append(relationships, events.AuthRelationshipRelation{
+						Relation:  "owner",
+						SubjectID: resource_provider_id,
+					})
 
 					if ok {
 						cv_resource_provider_id = fmt.Sprintf("%s", fmt.Sprint(resource_provider_id))
@@ -1002,10 +1015,17 @@ func StatusNamespaceHooks() []ent.Hook {
 						return nil, fmt.Errorf("object doesn't have an id %s", objID)
 					}
 
-					_, err := m.Client().StatusNamespace.Get(ctx, objID)
+					dbObj, err := m.Client().StatusNamespace.Get(ctx, objID)
 					if err != nil {
 						return nil, fmt.Errorf("failed to load object to get values for event, err %w", err)
 					}
+
+					additionalSubjects = append(additionalSubjects, dbObj.ResourceProviderID)
+
+					relationships = append(relationships, events.AuthRelationshipRelation{
+						Relation:  "owner",
+						SubjectID: dbObj.ResourceProviderID,
+					})
 
 					// we have all the info we need, now complete the mutation before we process the event
 					retValue, err := next.Mutate(ctx, m)

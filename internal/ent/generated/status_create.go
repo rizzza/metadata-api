@@ -301,11 +301,15 @@ func (sc *StatusCreate) createSpec() (*Status, *sqlgraph.CreateSpec) {
 // StatusCreateBulk is the builder for creating many Status entities in bulk.
 type StatusCreateBulk struct {
 	config
+	err      error
 	builders []*StatusCreate
 }
 
 // Save creates the Status entities in the database.
 func (scb *StatusCreateBulk) Save(ctx context.Context) ([]*Status, error) {
+	if scb.err != nil {
+		return nil, scb.err
+	}
 	specs := make([]*sqlgraph.CreateSpec, len(scb.builders))
 	nodes := make([]*Status, len(scb.builders))
 	mutators := make([]Mutator, len(scb.builders))

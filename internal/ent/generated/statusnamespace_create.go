@@ -276,11 +276,15 @@ func (snc *StatusNamespaceCreate) createSpec() (*StatusNamespace, *sqlgraph.Crea
 // StatusNamespaceCreateBulk is the builder for creating many StatusNamespace entities in bulk.
 type StatusNamespaceCreateBulk struct {
 	config
+	err      error
 	builders []*StatusNamespaceCreate
 }
 
 // Save creates the StatusNamespace entities in the database.
 func (sncb *StatusNamespaceCreateBulk) Save(ctx context.Context) ([]*StatusNamespace, error) {
+	if sncb.err != nil {
+		return nil, sncb.err
+	}
 	specs := make([]*sqlgraph.CreateSpec, len(sncb.builders))
 	nodes := make([]*StatusNamespace, len(sncb.builders))
 	mutators := make([]Mutator, len(sncb.builders))

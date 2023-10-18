@@ -378,6 +378,7 @@ func (m *AnnotationMutation) SetNamespaceID(id gidx.PrefixedID) {
 // ClearNamespace clears the "namespace" edge to the AnnotationNamespace entity.
 func (m *AnnotationMutation) ClearNamespace() {
 	m.clearednamespace = true
+	m.clearedFields[annotation.FieldAnnotationNamespaceID] = struct{}{}
 }
 
 // NamespaceCleared reports if the "namespace" edge to the AnnotationNamespace entity was cleared.
@@ -412,6 +413,7 @@ func (m *AnnotationMutation) ResetNamespace() {
 // ClearMetadata clears the "metadata" edge to the Metadata entity.
 func (m *AnnotationMutation) ClearMetadata() {
 	m.clearedmetadata = true
+	m.clearedFields[annotation.FieldMetadataID] = struct{}{}
 }
 
 // MetadataCleared reports if the "metadata" edge to the Metadata entity was cleared.
@@ -2347,6 +2349,7 @@ func (m *StatusMutation) SetNamespaceID(id gidx.PrefixedID) {
 // ClearNamespace clears the "namespace" edge to the StatusNamespace entity.
 func (m *StatusMutation) ClearNamespace() {
 	m.clearednamespace = true
+	m.clearedFields[status.FieldStatusNamespaceID] = struct{}{}
 }
 
 // NamespaceCleared reports if the "namespace" edge to the StatusNamespace entity was cleared.
@@ -2381,6 +2384,7 @@ func (m *StatusMutation) ResetNamespace() {
 // ClearMetadata clears the "metadata" edge to the Metadata entity.
 func (m *StatusMutation) ClearMetadata() {
 	m.clearedmetadata = true
+	m.clearedFields[status.FieldMetadataID] = struct{}{}
 }
 
 // MetadataCleared reports if the "metadata" edge to the Metadata entity was cleared.

@@ -7,6 +7,7 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.infratographer.com/permissions-api/pkg/permissions"
 	"go.infratographer.com/permissions-api/pkg/permissions/mockpermissions"
@@ -19,8 +20,9 @@ import (
 
 func TestStatusUpdate(t *testing.T) {
 	ctx := context.Background()
-
 	perms := new(mockpermissions.MockPermissions)
+	perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 	ctx = perms.ContextWithHandler(ctx)
 
 	// Permit request
@@ -142,8 +144,9 @@ func TestStatusUpdate(t *testing.T) {
 
 func TestStatusDelete(t *testing.T) {
 	ctx := context.Background()
-
 	perms := new(mockpermissions.MockPermissions)
+	perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 	ctx = perms.ContextWithHandler(ctx)
 
 	// Permit request

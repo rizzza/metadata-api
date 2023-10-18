@@ -13,7 +13,7 @@ data:
   METADATAAPI_EVENTS_NATS_CONNECTTIMEOUT: "{{ .Values.api.events.nats.connectTimeout }}"
   METADATAAPI_EVENTS_NATS_SHUTDOWNTIMEOUT: "{{ .Values.api.events.nats.shutdownTimeout }}"
 {{- if .Values.api.events.nats.credsSecretName }}
-  LOADBALANCERAPI_EVENTS_NATS_CREDSFILE: "{{ .Values.api.events.nats.credsFile }}"
+  METADATAAPI_EVENTS_NATS_CREDSFILE: "{{ .Values.api.events.nats.credsFile }}"
 {{- end }}
   METADATAAPI_OIDC_ENABLED: "{{ .Values.api.oidc.enabled }}"
   METADATAAPI_OIDC_AUDIENCE: "{{ .Values.api.oidc.audience }}"
