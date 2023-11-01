@@ -105,7 +105,7 @@ spec:
           volumeMounts:
             {{- if .Values.api.events.nats.credsSecretName  }}
             - name: events-creds
-              mountPath: /event-creds
+              mountPath: /nats
             {{- end }}
             {{- if .Values.api.db.certSecret }}
             - name: dbcerts
