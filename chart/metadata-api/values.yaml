@@ -66,6 +66,8 @@ api:
 
   permissions:
     url: ""
+    # ignoreNoResponders whether or not to ignore errors when no AuthRelationship responders are available
+    ignoreNoResponders: false
 
   tracing:
     # enabled is true if OpenTelemetry tracing should be enabled for permissions-api
