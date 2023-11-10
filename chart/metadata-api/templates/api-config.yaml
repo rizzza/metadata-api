@@ -22,6 +22,7 @@ data:
   METADATAAPI_SERVER_LISTEN: ":{{ .Values.api.listenPort }}"
   METADATAAPI_SERVER_SHUTDOWN_GRACE_PERIOD: "{{ .Values.api.shutdownGracePeriod }}"
   METADATAAPI_PERMISSIONS_URL: "{{ .Values.api.permissions.url }}"
+  METADATAAPI_PERMISSIONS_IGNORENORESPONDERS: "{{ .Values.api.permissions.ignoreNoResponders }}"
 {{- if .Values.api.tracing.enabled }}
   METADATAAPI_TRACING_ENABLED: "{{ .Values.api.tracing.enabled }}"
   METADATAAPI_TRACING_PROVIDER: "{{ .Values.api.tracing.provider }}"
