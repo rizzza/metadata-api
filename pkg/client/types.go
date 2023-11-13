@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 )
 
+// StatusUpdate is the statusUpdate mutation
 type StatusUpdate struct {
 	StatusUpdate StatusUpdateResponse `graphql:"statusUpdate(input: $input)"`
 }
 
+// StatusUpdateInput is the input for the statusUpdate mutation
 type StatusUpdateInput struct {
 	// The node ID for this status.
 	NodeID string `graphql:"nodeID" json:"nodeID"`
@@ -19,6 +21,7 @@ type StatusUpdateInput struct {
 	Data json.RawMessage `graphql:"data" json:"data"`
 }
 
+// StatusUpdateResponse is the response for the statusUpdate mutation
 type StatusUpdateResponse struct {
 	Status struct {
 		ID                string          `graphql:"id"`
