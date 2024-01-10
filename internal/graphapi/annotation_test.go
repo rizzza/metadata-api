@@ -36,6 +36,7 @@ func TestAnnotationUpdate(t *testing.T) {
 		TestName    string
 		NodeID      gidx.PrefixedID
 		NamespaceID gidx.PrefixedID
+		JSONData    json.RawMessage // optional, otherwise generated
 		ErrorMsg    string
 	}{
 		{
@@ -54,25 +55,53 @@ func TestAnnotationUpdate(t *testing.T) {
 			NamespaceID: ant1.AnnotationNamespaceID,
 		},
 		{
-			TestName:    "Fails when namespace doesn't exists",
+			TestName:    "Fails when namespace doesn't exist",
 			NodeID:      gidx.MustNewID("testing"),
 			NamespaceID: gidx.MustNewID("notreal"),
-			ErrorMsg:    "constraint failed", // TODO: This should have a better error message
+			ErrorMsg:    "not found",
 		},
 		{
 			TestName:    "Fails when namespace is empty",
 			NodeID:      gidx.MustNewID("testing"),
 			NamespaceID: "",
-			ErrorMsg:    "value is less than the required length",
+			ErrorMsg:    "must not be empty",
+		},
+		{
+			TestName:    "Fails when namespace gidx is invalid",
+			NodeID:      gidx.MustNewID("testing"),
+			NamespaceID: "test-invalid-id",
+			ErrorMsg:    "invalid id",
+		},
+		{
+			TestName:    "Fails when node is empty",
+			NodeID:      "",
+			NamespaceID: gidx.MustNewID("testing"),
+			ErrorMsg:    "must not be empty",
+		},
+		{
+			TestName:    "Fails when node gidx is invalid",
+			NodeID:      "test-invalid-id",
+			NamespaceID: gidx.MustNewID("testing"),
+			ErrorMsg:    "invalid id",
+		},
+		{
+			TestName:    "Fails to update nodeID status with invalid json data",
+			NodeID:      gidx.MustNewID("testing"),
+			NamespaceID: AnnotationNamespaceBuilder{}.MustNew(ctx).ID,
+			JSONData:    json.RawMessage(`{{}`),
+			ErrorMsg:    "error calling MarshalJSON",
 		},
 	}
 
 	for _, tt := range testCases {
 		t.Run(tt.TestName, func(t *testing.T) {
-			jsonData, err := gofakeit.JSON(nil)
-			require.NoError(t, err)
+			if tt.JSONData == nil {
+				jsonData, err := gofakeit.JSON(nil)
+				tt.JSONData = json.RawMessage(jsonData)
+				require.NoError(t, err)
+			}
 
-			resp, err := graphTestClient().AnnotationUpdate(ctx, testclient.AnnotationUpdateInput{NodeID: tt.NodeID, NamespaceID: tt.NamespaceID, Data: json.RawMessage(jsonData)})
+			resp, err := graphTestClient().AnnotationUpdate(ctx, testclient.AnnotationUpdateInput{NodeID: tt.NodeID, NamespaceID: tt.NamespaceID, Data: tt.JSONData})
 
 			if tt.ErrorMsg != "" {
 				assert.Error(t, err)
@@ -83,7 +112,7 @@ func TestAnnotationUpdate(t *testing.T) {
 
 			require.NoError(t, err)
 			assert.NotNil(t, resp.AnnotationUpdate.Annotation)
-			assert.JSONEq(t, string(jsonData), string(resp.AnnotationUpdate.Annotation.Data))
+			assert.JSONEq(t, string(tt.JSONData), string(resp.AnnotationUpdate.Annotation.Data))
 
 			antCount := EntClient.Annotation.Query().Where(annotation.AnnotationNamespaceID(tt.NamespaceID), annotation.HasMetadataWith(metadata.NodeID(tt.NodeID))).CountX(ctx)
 			assert.Equal(t, 1, antCount)
@@ -115,10 +144,34 @@ func TestAnnotationDelete(t *testing.T) {
 			NamespaceID: AnnotationBuilder{Metadata: meta1}.MustNew(ctx).AnnotationNamespaceID,
 		},
 		{
-			TestName:    "Will return an error if the annotation doesn't exists",
+			TestName:    "Fails when the annotation doesn't exist",
 			NodeID:      meta1.NodeID,
 			NamespaceID: AnnotationNamespaceBuilder{}.MustNew(ctx).ID,
 			ErrorMsg:    "annotation not found",
+		},
+		{
+			TestName:    "Fails when namespace is empty",
+			NodeID:      gidx.MustNewID("testing"),
+			NamespaceID: "",
+			ErrorMsg:    "must not be empty",
+		},
+		{
+			TestName:    "Fails when namespace gidx is invalid",
+			NodeID:      gidx.MustNewID("testing"),
+			NamespaceID: "test-invalid-id",
+			ErrorMsg:    "invalid id",
+		},
+		{
+			TestName:    "Fails when node is empty",
+			NodeID:      "",
+			NamespaceID: gidx.MustNewID("testing"),
+			ErrorMsg:    "must not be empty",
+		},
+		{
+			TestName:    "Fails when node gidx is invalid",
+			NodeID:      "test-invalid-id",
+			NamespaceID: gidx.MustNewID("testing"),
+			ErrorMsg:    "invalid id",
 		},
 	}
 
