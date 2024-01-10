@@ -44,12 +44,22 @@ func TestAnnotationNamespacesCreate(t *testing.T) {
 		{
 			TestName:                 "Failed when name is in use by same owner",
 			AnnotationNamespaceInput: testclient.CreateAnnotationNamespaceInput{Name: ns1.Name, OwnerID: ns1.OwnerID},
-			ErrorMsg:                 "constraint failed", // TODO: This should have a better error message
+			ErrorMsg:                 "must be unique",
 		},
 		{
 			TestName:                 "Fails when owner is empty",
 			AnnotationNamespaceInput: testclient.CreateAnnotationNamespaceInput{Name: ns1.Name, OwnerID: ""},
-			ErrorMsg:                 "value is less than the required length", // TODO: This should have a better error message
+			ErrorMsg:                 "must not be empty",
+		},
+		{
+			TestName:                 "Fails when name is empty",
+			AnnotationNamespaceInput: testclient.CreateAnnotationNamespaceInput{Name: "", OwnerID: ns1.OwnerID},
+			ErrorMsg:                 "must not be empty",
+		},
+		{
+			TestName:                 "Fails when owner is an invalid gidx",
+			AnnotationNamespaceInput: testclient.CreateAnnotationNamespaceInput{Name: ns1.Name, OwnerID: "test-invalid-id"},
+			ErrorMsg:                 "invalid id",
 		},
 	}
 
@@ -102,6 +112,21 @@ func TestAnnotationNamespacesDelete(t *testing.T) {
 			TestName:              "Fails when there are annotations using it",
 			AnnotationNamespaceID: ns1.ID,
 			ErrorMsg:              "namespace is in use and can't be deleted",
+		},
+		{
+			TestName:              "Fails when name is empty",
+			AnnotationNamespaceID: "",
+			ErrorMsg:              "must not be empty",
+		},
+		{
+			TestName:              "Fails when id is an invalid gidx",
+			AnnotationNamespaceID: "test-invalid-id",
+			ErrorMsg:              "invalid id",
+		},
+		{
+			TestName:              "Fails when id is not found",
+			AnnotationNamespaceID: gidx.MustNewID("testing"),
+			ErrorMsg:              "not found",
 		},
 		{
 			TestName:              "Successful when nothing is using it",
@@ -168,7 +193,24 @@ func TestAnnotationNamespacesUpdate(t *testing.T) {
 			TestName: "Failed when name is in use by same tenant",
 			ID:       ns2.ID,
 			NewName:  ns.Name,
-			ErrorMsg: "constraint failed", // TODO: This should have a better error message
+			ErrorMsg: "must be unique",
+		},
+		{
+			TestName: "Fails when id is empty",
+			ID:       "",
+			ErrorMsg: "must not be empty",
+		},
+		{
+			TestName: "Fails when id is not found",
+			ID:       gidx.MustNewID("testing"),
+			NewName:  ns.Name,
+			ErrorMsg: "not found",
+		},
+		{
+			TestName: "Fails when id is an invalid gidx",
+			ID:       "test-invalid-id",
+			NewName:  ns.Name,
+			ErrorMsg: "invalid id",
 		},
 	}
 
@@ -214,11 +256,26 @@ func TestAnnotationNamespacesGet(t *testing.T) {
 			QueryID:    ns1.ID,
 			ExpectedLB: ns1,
 		},
+		{
+			TestName: "Fails when id is empty",
+			QueryID:  "",
+			ErrorMsg: "must not be empty",
+		},
+		{
+			TestName: "Fails when id is an invalid gidx",
+			QueryID:  "test-invalid-id",
+			ErrorMsg: "invalid id",
+		},
+		{
+			TestName: "Fails when id is not found",
+			QueryID:  gidx.MustNewID("testing"),
+			ErrorMsg: "not found",
+		},
 	}
 
 	for _, tt := range testCases {
 		t.Run(tt.TestName, func(t *testing.T) {
-			resp, err := graphTestClient().GetAnnotationNamespace(ctx, ns1.ID)
+			resp, err := graphTestClient().GetAnnotationNamespace(ctx, tt.QueryID)
 
 			if tt.ErrorMsg != "" {
 				assert.Error(t, err)
