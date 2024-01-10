@@ -395,6 +395,7 @@ type StatusNamespace implements Node @key(fields: "id") @prefixedID(prefix: "met
   name: String!
   """Flag for if this namespace is private."""
   private: Boolean!
+  statuses: [Status!]
 }
 """A connection to a list of items."""
 type StatusNamespaceConnection {
@@ -477,6 +478,9 @@ input StatusNamespaceWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
+  """statuses edge predicates"""
+  hasStatuses: Boolean
+  hasStatusesWith: [StatusWhereInput!]
 }
 """Ordering options for Status connections"""
 input StatusOrder {

@@ -9,11 +9,10 @@ import (
 	"database/sql"
 	"fmt"
 
-	"go.infratographer.com/permissions-api/pkg/permissions"
-	"go.infratographer.com/x/gidx"
-
 	"go.infratographer.com/metadata-api/internal/ent/generated"
 	"go.infratographer.com/metadata-api/internal/ent/generated/status"
+	"go.infratographer.com/permissions-api/pkg/permissions"
+	"go.infratographer.com/x/gidx"
 )
 
 // StatusNamespaceCreate is the resolver for the statusNamespaceCreate field.

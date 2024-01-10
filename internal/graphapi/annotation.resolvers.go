@@ -7,10 +7,9 @@ package graphapi
 import (
 	"context"
 
-	"go.infratographer.com/permissions-api/pkg/permissions"
-
 	"go.infratographer.com/metadata-api/internal/ent/generated/annotation"
 	"go.infratographer.com/metadata-api/internal/ent/generated/metadata"
+	"go.infratographer.com/permissions-api/pkg/permissions"
 )
 
 // AnnotationUpdate is the resolver for the annotationUpdate field.

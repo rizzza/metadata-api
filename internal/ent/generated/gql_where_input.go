@@ -1111,6 +1111,10 @@ type StatusNamespaceWhereInput struct {
 	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
 	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
 	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+
+	// "statuses" edge predicates.
+	HasStatuses     *bool               `json:"hasStatuses,omitempty"`
+	HasStatusesWith []*StatusWhereInput `json:"hasStatusesWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -1296,6 +1300,24 @@ func (i *StatusNamespaceWhereInput) P() (predicate.StatusNamespace, error) {
 		predicates = append(predicates, statusnamespace.NameContainsFold(*i.NameContainsFold))
 	}
 
+	if i.HasStatuses != nil {
+		p := statusnamespace.HasStatuses()
+		if !*i.HasStatuses {
+			p = statusnamespace.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasStatusesWith) > 0 {
+		with := make([]predicate.Status, 0, len(i.HasStatusesWith))
+		for _, w := range i.HasStatusesWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasStatusesWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, statusnamespace.HasStatusesWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyStatusNamespaceWhereInput

@@ -78,7 +78,7 @@ func (StatusNamespace) Edges() []ent.Edge {
 		edge.From("statuses", Status.Type).
 			Ref("namespace").
 			Annotations(
-				entgql.Skip(entgql.SkipAll),
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
 			),
 	}
 }

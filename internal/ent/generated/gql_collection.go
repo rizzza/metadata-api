@@ -710,6 +710,18 @@ func (sn *StatusNamespaceQuery) collectField(ctx context.Context, opCtx *graphql
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+		case "statuses":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&StatusClient{config: sn.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			sn.WithNamedStatuses(alias, func(wq *StatusQuery) {
+				*wq = *query
+			})
 		case "createdAt":
 			if _, ok := fieldSeen[statusnamespace.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, statusnamespace.FieldCreatedAt)

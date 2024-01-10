@@ -470,7 +470,8 @@ type StatusNamespace struct {
 	// The name of the status namespace.
 	Name string `json:"name"`
 	// Flag for if this namespace is private.
-	Private bool `json:"private"`
+	Private  bool      `json:"private"`
+	Statuses []*Status `json:"statuses,omitempty"`
 	// The owner of the status namespace.
 	Owner StatusOwner `json:"owner"`
 }
@@ -575,6 +576,9 @@ type StatusNamespaceWhereInput struct {
 	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
 	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
 	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+	// statuses edge predicates
+	HasStatuses     *bool               `json:"hasStatuses,omitempty"`
+	HasStatusesWith []*StatusWhereInput `json:"hasStatusesWith,omitempty"`
 }
 
 // Ordering options for Status connections

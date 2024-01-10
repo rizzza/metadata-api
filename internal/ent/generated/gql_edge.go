@@ -107,3 +107,15 @@ func (s *Status) Metadata(ctx context.Context) (*Metadata, error) {
 	}
 	return result, err
 }
+
+func (sn *StatusNamespace) Statuses(ctx context.Context) (result []*Status, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = sn.NamedStatuses(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = sn.Edges.StatusesOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = sn.QueryStatuses().All(ctx)
+	}
+	return result, err
+}

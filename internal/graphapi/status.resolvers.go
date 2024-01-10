@@ -8,13 +8,11 @@ import (
 	"context"
 	"encoding/json"
 
-	"go.infratographer.com/x/gidx"
-
-	"go.infratographer.com/permissions-api/pkg/permissions"
-
 	"go.infratographer.com/metadata-api/internal/ent/generated"
 	"go.infratographer.com/metadata-api/internal/ent/generated/metadata"
 	"go.infratographer.com/metadata-api/internal/ent/generated/status"
+	"go.infratographer.com/permissions-api/pkg/permissions"
+	"go.infratographer.com/x/gidx"
 )
 
 // StatusUpdate is the resolver for the statusUpdate field.

@@ -224,6 +224,7 @@ type ComplexityRoot struct {
 		Name      func(childComplexity int) int
 		Owner     func(childComplexity int) int
 		Private   func(childComplexity int) int
+		Statuses  func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
 	}
 
@@ -1099,6 +1100,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.StatusNamespace.Private(childComplexity), true
 
+	case "StatusNamespace.statuses":
+		if e.complexity.StatusNamespace.Statuses == nil {
+			break
+		}
+
+		return e.complexity.StatusNamespace.Statuses(childComplexity), true
+
 	case "StatusNamespace.updatedAt":
 		if e.complexity.StatusNamespace.UpdatedAt == nil {
 			break
@@ -1873,6 +1881,7 @@ type StatusNamespace implements Node @key(fields: "id") @prefixedID(prefix: "met
   name: String!
   """Flag for if this namespace is private."""
   private: Boolean!
+  statuses: [Status!]
 }
 """A connection to a list of items."""
 type StatusNamespaceConnection {
@@ -1955,6 +1964,9 @@ input StatusNamespaceWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
+  """statuses edge predicates"""
+  hasStatuses: Boolean
+  hasStatusesWith: [StatusWhereInput!]
 }
 """Ordering options for Status connections"""
 input StatusOrder {
@@ -5038,6 +5050,8 @@ func (ec *executionContext) fieldContext_Entity_findStatusNamespaceByID(ctx cont
 				return ec.fieldContext_StatusNamespace_name(ctx, field)
 			case "private":
 				return ec.fieldContext_StatusNamespace_private(ctx, field)
+			case "statuses":
+				return ec.fieldContext_StatusNamespace_statuses(ctx, field)
 			case "owner":
 				return ec.fieldContext_StatusNamespace_owner(ctx, field)
 			}
@@ -7408,6 +7422,8 @@ func (ec *executionContext) fieldContext_Status_namespace(ctx context.Context, f
 				return ec.fieldContext_StatusNamespace_name(ctx, field)
 			case "private":
 				return ec.fieldContext_StatusNamespace_private(ctx, field)
+			case "statuses":
+				return ec.fieldContext_StatusNamespace_statuses(ctx, field)
 			case "owner":
 				return ec.fieldContext_StatusNamespace_owner(ctx, field)
 			}
@@ -7991,6 +8007,67 @@ func (ec *executionContext) fieldContext_StatusNamespace_private(ctx context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _StatusNamespace_statuses(ctx context.Context, field graphql.CollectedField, obj *generated.StatusNamespace) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StatusNamespace_statuses(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Statuses(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*generated.Status)
+	fc.Result = res
+	return ec.marshalOStatus2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_StatusNamespace_statuses(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StatusNamespace",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Status_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Status_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Status_updatedAt(ctx, field)
+			case "metadataID":
+				return ec.fieldContext_Status_metadataID(ctx, field)
+			case "statusNamespaceID":
+				return ec.fieldContext_Status_statusNamespaceID(ctx, field)
+			case "source":
+				return ec.fieldContext_Status_source(ctx, field)
+			case "data":
+				return ec.fieldContext_Status_data(ctx, field)
+			case "namespace":
+				return ec.fieldContext_Status_namespace(ctx, field)
+			case "metadata":
+				return ec.fieldContext_Status_metadata(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Status", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _StatusNamespace_owner(ctx context.Context, field graphql.CollectedField, obj *generated.StatusNamespace) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_StatusNamespace_owner(ctx, field)
 	if err != nil {
@@ -8237,6 +8314,8 @@ func (ec *executionContext) fieldContext_StatusNamespaceCreatePayload_statusName
 				return ec.fieldContext_StatusNamespace_name(ctx, field)
 			case "private":
 				return ec.fieldContext_StatusNamespace_private(ctx, field)
+			case "statuses":
+				return ec.fieldContext_StatusNamespace_statuses(ctx, field)
 			case "owner":
 				return ec.fieldContext_StatusNamespace_owner(ctx, field)
 			}
@@ -8380,6 +8459,8 @@ func (ec *executionContext) fieldContext_StatusNamespaceEdge_node(ctx context.Co
 				return ec.fieldContext_StatusNamespace_name(ctx, field)
 			case "private":
 				return ec.fieldContext_StatusNamespace_private(ctx, field)
+			case "statuses":
+				return ec.fieldContext_StatusNamespace_statuses(ctx, field)
 			case "owner":
 				return ec.fieldContext_StatusNamespace_owner(ctx, field)
 			}
@@ -8482,6 +8563,8 @@ func (ec *executionContext) fieldContext_StatusNamespaceUpdatePayload_statusName
 				return ec.fieldContext_StatusNamespace_name(ctx, field)
 			case "private":
 				return ec.fieldContext_StatusNamespace_private(ctx, field)
+			case "statuses":
+				return ec.fieldContext_StatusNamespace_statuses(ctx, field)
 			case "owner":
 				return ec.fieldContext_StatusNamespace_owner(ctx, field)
 			}
@@ -11986,7 +12069,7 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "hasStatuses", "hasStatusesWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -12353,6 +12436,24 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 				return it, err
 			}
 			it.NameContainsFold = data
+		case "hasStatuses":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasStatuses"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasStatuses = data
+		case "hasStatusesWith":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasStatusesWith"))
+			data, err := ec.unmarshalOStatusWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasStatusesWith = data
 		}
 	}
 
@@ -14975,6 +15076,39 @@ func (ec *executionContext) _StatusNamespace(ctx context.Context, sel ast.Select
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "statuses":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._StatusNamespace_statuses(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "owner":
 			field := field
 
@@ -17113,6 +17247,53 @@ func (ec *executionContext) unmarshalOMetadataWhereInput2ᚖgoᚗinfratographer�
 	}
 	res, err := ec.unmarshalInputMetadataWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOStatus2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusᚄ(ctx context.Context, sel ast.SelectionSet, v []*generated.Status) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNStatus2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatus(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOStatus2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatus(ctx context.Context, sel ast.SelectionSet, v *generated.Status) graphql.Marshaler {
