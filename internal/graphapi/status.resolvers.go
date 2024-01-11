@@ -22,27 +22,27 @@ func (r *mutationResolver) StatusUpdate(ctx context.Context, input StatusUpdateI
 	logger := r.logger.With("nodeID", input.NodeID, "namespaceID", input.NamespaceID, "source", input.Source)
 
 	if input.NamespaceID == "" {
-		return nil, NewInvalidFieldError("NamespaceID", ErrFieldEmpty)
+		return nil, NewInvalidFieldError("namespaceID", ErrFieldEmpty)
 	}
 
 	if input.NodeID == "" {
-		return nil, NewInvalidFieldError("NodeID", ErrFieldEmpty)
+		return nil, NewInvalidFieldError("nodeID", ErrFieldEmpty)
 	}
 
 	if input.Source == "" {
-		return nil, NewInvalidFieldError("Source", ErrFieldEmpty)
+		return nil, NewInvalidFieldError("source", ErrFieldEmpty)
 	}
 
 	if _, err := gidx.Parse(input.NodeID.String()); err != nil {
-		return nil, NewInvalidFieldError("NodeID", err)
+		return nil, NewInvalidFieldError("nodeID", err)
 	}
 
 	if _, err := gidx.Parse(input.NamespaceID.String()); err != nil {
-		return nil, NewInvalidFieldError("NamespaceID", err)
+		return nil, NewInvalidFieldError("namespaceID", err)
 	}
 
 	if !json.Valid(input.Data) {
-		return nil, NewInvalidFieldError("Data", ErrInvalidJSON)
+		return nil, NewInvalidFieldError("data", ErrInvalidJSON)
 	}
 
 	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataStatusNamespaceUpdate); err != nil {
@@ -114,23 +114,23 @@ func (r *mutationResolver) StatusDelete(ctx context.Context, input StatusDeleteI
 	logger := r.logger.With("nodeID", input.NodeID, "namespaceID", input.NamespaceID, "source", input.Source)
 
 	if input.NamespaceID == "" {
-		return nil, NewInvalidFieldError("NamespaceID", ErrFieldEmpty)
+		return nil, NewInvalidFieldError("namespaceID", ErrFieldEmpty)
 	}
 
 	if input.NodeID == "" {
-		return nil, NewInvalidFieldError("NodeID", ErrFieldEmpty)
+		return nil, NewInvalidFieldError("nodeID", ErrFieldEmpty)
 	}
 
 	if input.Source == "" {
-		return nil, NewInvalidFieldError("Source", ErrFieldEmpty)
+		return nil, NewInvalidFieldError("source", ErrFieldEmpty)
 	}
 
 	if _, err := gidx.Parse(input.NodeID.String()); err != nil {
-		return nil, NewInvalidFieldError("NodeID", err)
+		return nil, NewInvalidFieldError("nodeID", err)
 	}
 
 	if _, err := gidx.Parse(input.NamespaceID.String()); err != nil {
-		return nil, NewInvalidFieldError("NamespaceID", err)
+		return nil, NewInvalidFieldError("namespaceID", err)
 	}
 
 	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataStatusNamespaceUpdate); err != nil {

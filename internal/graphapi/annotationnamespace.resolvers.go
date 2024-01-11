@@ -53,7 +53,7 @@ func (r *mutationResolver) AnnotationNamespaceCreate(ctx context.Context, input 
 
 // AnnotationNamespaceDelete is the resolver for the annotationNamespaceDelete field.
 func (r *mutationResolver) AnnotationNamespaceDelete(ctx context.Context, id gidx.PrefixedID, force bool) (*AnnotationNamespaceDeletePayload, error) {
-	logger := r.logger.With("id", id)
+	logger := r.logger.With("annotationNamespaceID", id)
 
 	if id == "" {
 		return nil, NewInvalidFieldError("id", ErrFieldEmpty)
@@ -123,7 +123,7 @@ func (r *mutationResolver) AnnotationNamespaceDelete(ctx context.Context, id gid
 
 // AnnotationNamespaceUpdate is the resolver for the annotationNamespaceUpdate field.
 func (r *mutationResolver) AnnotationNamespaceUpdate(ctx context.Context, id gidx.PrefixedID, input generated.UpdateAnnotationNamespaceInput) (*AnnotationNamespaceUpdatePayload, error) {
-	logger := r.logger.With("id", id)
+	logger := r.logger.With("annotationNamespaceID", id)
 
 	if id == "" {
 		return nil, NewInvalidFieldError("id", ErrFieldEmpty)
@@ -166,7 +166,7 @@ func (r *mutationResolver) AnnotationNamespaceUpdate(ctx context.Context, id gid
 
 // AnnotationNamespace is the resolver for the annotationNamespace field.
 func (r *queryResolver) AnnotationNamespace(ctx context.Context, id gidx.PrefixedID) (*generated.AnnotationNamespace, error) {
-	logger := r.logger.With("id", id)
+	logger := r.logger.With("annotationNamespaceID", id)
 
 	if id == "" {
 		return nil, NewInvalidFieldError("id", ErrFieldEmpty)

@@ -78,7 +78,8 @@ func (r *mutationResolver) AnnotationUpdate(ctx context.Context, input Annotatio
 
 			ant, err = r.client.Annotation.Create().SetMetadata(md).SetAnnotationNamespaceID(input.NamespaceID).SetData(input.Data).Save(ctx)
 			if err != nil {
-				return nil, err
+				logger.Errorw("failed to create annotation", "error", err)
+				return nil, ErrInternalServerError
 			}
 
 			return &AnnotationUpdateResponse{Annotation: ant}, nil

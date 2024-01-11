@@ -18,6 +18,7 @@ var (
 	// ErrUniquenessConstraint is returned when an input field must be unique.
 	ErrUniquenessConstraint = errors.New("must be unique")
 
+	// ErrNamespaceInUse is returned when a namespace is in use and can't be deleted.
 	ErrNamespaceInUse = errors.New("namespace is in use and can't be deleted")
 )
 

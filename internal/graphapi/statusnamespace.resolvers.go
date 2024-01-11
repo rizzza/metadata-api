@@ -48,7 +48,7 @@ func (r *mutationResolver) StatusNamespaceCreate(ctx context.Context, input gene
 
 // StatusNamespaceDelete is the resolver for the statusNamespaceDelete field.
 func (r *mutationResolver) StatusNamespaceDelete(ctx context.Context, id gidx.PrefixedID, force bool) (*StatusNamespaceDeletePayload, error) {
-	logger := r.logger.With("id", id)
+	logger := r.logger.With("statusNamespaceID", id)
 
 	if id == "" {
 		return nil, NewInvalidFieldError("id", ErrFieldEmpty)
@@ -119,7 +119,7 @@ func (r *mutationResolver) StatusNamespaceDelete(ctx context.Context, id gidx.Pr
 
 // StatusNamespaceUpdate is the resolver for the statusNamespaceUpdate field.
 func (r *mutationResolver) StatusNamespaceUpdate(ctx context.Context, id gidx.PrefixedID, input generated.UpdateStatusNamespaceInput) (*StatusNamespaceUpdatePayload, error) {
-	logger := r.logger.With("id", id)
+	logger := r.logger.With("statusNamespaceID", id)
 
 	if id == "" {
 		return nil, NewInvalidFieldError("id", ErrFieldEmpty)
