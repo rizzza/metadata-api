@@ -134,8 +134,7 @@ func (r *mutationResolver) AnnotationDelete(ctx context.Context, input Annotatio
 		return nil, err
 	}
 
-	err = r.client.Annotation.DeleteOne(ant).Exec(ctx)
-	if err != nil {
+	if err = r.client.Annotation.DeleteOne(ant).Exec(ctx); err != nil {
 		logger.Errorw("failed to delete annotation", "error", err)
 		return nil, ErrInternalServerError
 	}

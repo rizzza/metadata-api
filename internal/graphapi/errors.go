@@ -29,7 +29,7 @@ type ErrInvalidField struct {
 
 // Error implements the error interface.
 func (e *ErrInvalidField) Error() string {
-	return fmt.Sprintf("%v: field: %s", e.err, e.field)
+	return fmt.Sprintf("%s: %v", e.field, e.err)
 }
 
 func NewInvalidFieldError(field string, err error) *ErrInvalidField {

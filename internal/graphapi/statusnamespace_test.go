@@ -43,12 +43,22 @@ func TestStatusNamespacesCreate(t *testing.T) {
 		{
 			TestName:             "Failed when name is in use by same resource provider",
 			StatusNamespaceInput: testclient.CreateStatusNamespaceInput{Name: ns1.Name, ResourceProviderID: ns1.ResourceProviderID},
-			ErrorMsg:             "constraint failed", // TODO: This should have a better error message
+			ErrorMsg:             "must be unique",
 		},
 		{
 			TestName:             "Fails when resource provider is empty",
 			StatusNamespaceInput: testclient.CreateStatusNamespaceInput{Name: ns1.Name, ResourceProviderID: ""},
-			ErrorMsg:             "value is less than the required length", // TODO: This should have a better error message
+			ErrorMsg:             "must not be empty",
+		},
+		{
+			TestName:             "Fails when resource provider is an invalid gidx",
+			StatusNamespaceInput: testclient.CreateStatusNamespaceInput{Name: ns1.Name, ResourceProviderID: "test-invalid-id"},
+			ErrorMsg:             "invalid id",
+		},
+		{
+			TestName:             "Fails when name is empty",
+			StatusNamespaceInput: testclient.CreateStatusNamespaceInput{Name: "", ResourceProviderID: ns1.ResourceProviderID},
+			ErrorMsg:             "must not be empty",
 		},
 	}
 
@@ -100,6 +110,21 @@ func TestStatusNamespacesDelete(t *testing.T) {
 			TestName:          "Fails when there are status' using it",
 			StatusNamespaceID: ns1.ID,
 			ErrorMsg:          "namespace is in use and can't be deleted",
+		},
+		{
+			TestName:          "Fails when id is empty",
+			StatusNamespaceID: "",
+			ErrorMsg:          "must not be empty",
+		},
+		{
+			TestName:          "Fails when id is an invalid gidx",
+			StatusNamespaceID: "test-invalid-id",
+			ErrorMsg:          "invalid id",
+		},
+		{
+			TestName:          "Fails when id is not found",
+			StatusNamespaceID: gidx.MustNewID("testing"),
+			ErrorMsg:          "not found",
 		},
 		{
 			TestName:          "Successful when nothing is using it",
@@ -163,10 +188,34 @@ func TestStatusNamespacesUpdate(t *testing.T) {
 			NewName:  ns.Name,
 		},
 		{
-			TestName: "Failed when name is in use by same tenant",
+			TestName: "Fails when name is empty",
+			ID:       ns.ID,
+			NewName:  "",
+			ErrorMsg: "must not be empty",
+		},
+		{
+			TestName: "Fails when name is in use by same tenant",
 			ID:       ns2.ID,
 			NewName:  ns.Name,
-			ErrorMsg: "constraint failed", // TODO: This should have a better error message
+			ErrorMsg: "must be unique",
+		},
+		{
+			TestName: "Fails when id is empty",
+			ID:       "",
+			NewName:  ns.Name,
+			ErrorMsg: "must not be empty",
+		},
+		{
+			TestName: "Fails when id is an invalid gidx",
+			ID:       "test-invalid-id",
+			NewName:  ns.Name,
+			ErrorMsg: "invalid id",
+		},
+		{
+			TestName: "Fails when id is not found",
+			ID:       gidx.MustNewID("testing"),
+			NewName:  ns.Name,
+			ErrorMsg: "not found",
 		},
 	}
 
