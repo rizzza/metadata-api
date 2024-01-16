@@ -129,12 +129,12 @@ func (r *mutationResolver) AnnotationNamespaceUpdate(ctx context.Context, id gid
 		return nil, NewInvalidFieldError("id", ErrFieldEmpty)
 	}
 
-	if *input.Name == "" {
-		return nil, NewInvalidFieldError("name", ErrFieldEmpty)
-	}
-
 	if _, err := gidx.Parse(id.String()); err != nil {
 		return nil, NewInvalidFieldError("id", err)
+	}
+
+	if input.Name != nil && *input.Name == "" {
+		return nil, NewInvalidFieldError("name", ErrFieldEmpty)
 	}
 
 	ns, err := r.client.AnnotationNamespace.Get(ctx, id)

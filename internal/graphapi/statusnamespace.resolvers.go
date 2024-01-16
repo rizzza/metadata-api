@@ -129,7 +129,7 @@ func (r *mutationResolver) StatusNamespaceUpdate(ctx context.Context, id gidx.Pr
 		return nil, NewInvalidFieldError("id", err)
 	}
 
-	if *input.Name == "" {
+	if input.Name != nil && *input.Name == "" {
 		return nil, NewInvalidFieldError("name", ErrFieldEmpty)
 	}
 
