@@ -6,15 +6,50 @@ package graphapi
 
 import (
 	"context"
+	"encoding/json"
 
 	"go.infratographer.com/permissions-api/pkg/permissions"
+	"go.infratographer.com/x/gidx"
 
+	"go.infratographer.com/metadata-api/internal/ent/generated"
 	"go.infratographer.com/metadata-api/internal/ent/generated/annotation"
 	"go.infratographer.com/metadata-api/internal/ent/generated/metadata"
 )
 
 // AnnotationUpdate is the resolver for the annotationUpdate field.
 func (r *mutationResolver) AnnotationUpdate(ctx context.Context, input AnnotationUpdateInput) (*AnnotationUpdateResponse, error) {
+	logger := r.logger.With("nodeID", input.NodeID, "namespaceID", input.NamespaceID)
+
+	if input.NamespaceID == "" {
+		return nil, NewInvalidFieldError("namespaceID", ErrFieldEmpty)
+	}
+
+	if _, err := gidx.Parse(input.NamespaceID.String()); err != nil {
+		return nil, NewInvalidFieldError("namespaceID", err)
+	}
+
+	if input.NodeID == "" {
+		return nil, NewInvalidFieldError("nodeID", ErrFieldEmpty)
+	}
+
+	if _, err := gidx.Parse(input.NodeID.String()); err != nil {
+		return nil, NewInvalidFieldError("nodeID", err)
+	}
+
+	if !json.Valid(input.Data) {
+		return nil, NewInvalidFieldError("data", ErrInvalidJSON)
+	}
+
+	_, err := r.client.AnnotationNamespace.Get(ctx, input.NamespaceID)
+	if err != nil {
+		if generated.IsNotFound(err) {
+			return nil, err
+		}
+
+		logger.Errorw("failed to get annotation namespace", "error", err)
+		return nil, ErrInternalServerError
+	}
+
 	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataAnnotationNamespaceUpdate); err != nil {
 		return nil, err
 	}
@@ -24,28 +59,40 @@ func (r *mutationResolver) AnnotationUpdate(ctx context.Context, input Annotatio
 		annotation.HasMetadataWith(metadata.NodeID(input.NodeID)),
 	).First(ctx)
 	if err != nil {
-		// TODO: check that error is the annotation doesn't exist
-
-		md, err := r.client.Metadata.Query().Where(metadata.NodeID(input.NodeID)).First(ctx)
-		if err != nil {
-			// TODO: check that error is the metadata doesn't exist, otherwise return err
-			md, err = r.client.Metadata.Create().SetNodeID(input.NodeID).Save(ctx)
+		// The annotation doesn't exist, create it
+		if generated.IsNotFound(err) {
+			md, err := r.client.Metadata.Query().Where(metadata.NodeID(input.NodeID)).First(ctx)
 			if err != nil {
-				return nil, err
+				// metadata doesn't exist, create it
+				if generated.IsNotFound(err) {
+					md, err = r.client.Metadata.Create().SetNodeID(input.NodeID).Save(ctx)
+					if err != nil {
+						logger.Errorw("failed to create metadata", "error", err)
+						return nil, ErrInternalServerError
+					}
+				} else {
+					logger.Errorw("failed to get metadata", "error", err)
+					return nil, ErrInternalServerError
+				}
 			}
-		}
 
-		ant, err = r.client.Annotation.Create().SetMetadata(md).SetAnnotationNamespaceID(input.NamespaceID).SetData(input.Data).Save(ctx)
-		if err != nil {
-			return nil, err
-		}
+			ant, err = r.client.Annotation.Create().SetMetadata(md).SetAnnotationNamespaceID(input.NamespaceID).SetData(input.Data).Save(ctx)
+			if err != nil {
+				logger.Errorw("failed to create annotation", "error", err)
+				return nil, ErrInternalServerError
+			}
 
-		return &AnnotationUpdateResponse{Annotation: ant}, nil
+			return &AnnotationUpdateResponse{Annotation: ant}, nil
+		} else {
+			logger.Errorw("failed to get annotation", "error", err)
+			return nil, ErrInternalServerError
+		}
 	}
 
 	ant, err = ant.Update().SetData(input.Data).Save(ctx)
 	if err != nil {
-		return nil, err
+		logger.Errorw("failed to update annotation", "error", err)
+		return nil, ErrInternalServerError
 	}
 
 	return &AnnotationUpdateResponse{Annotation: ant}, nil
@@ -53,8 +100,22 @@ func (r *mutationResolver) AnnotationUpdate(ctx context.Context, input Annotatio
 
 // AnnotationDelete is the resolver for the annotationDelete field.
 func (r *mutationResolver) AnnotationDelete(ctx context.Context, input AnnotationDeleteInput) (*AnnotationDeleteResponse, error) {
-	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataAnnotationNamespaceUpdate); err != nil {
-		return nil, err
+	logger := r.logger.With("nodeID", input.NodeID, "namespaceID", input.NamespaceID)
+
+	if input.NamespaceID == "" {
+		return nil, NewInvalidFieldError("namespaceID", ErrFieldEmpty)
+	}
+
+	if _, err := gidx.Parse(input.NamespaceID.String()); err != nil {
+		return nil, NewInvalidFieldError("namespaceID", err)
+	}
+
+	if input.NodeID == "" {
+		return nil, NewInvalidFieldError("nodeID", ErrFieldEmpty)
+	}
+
+	if _, err := gidx.Parse(input.NodeID.String()); err != nil {
+		return nil, NewInvalidFieldError("nodeID", err)
 	}
 
 	ant, err := r.client.Annotation.Query().Where(
@@ -62,12 +123,21 @@ func (r *mutationResolver) AnnotationDelete(ctx context.Context, input Annotatio
 		annotation.HasMetadataWith(metadata.NodeID(input.NodeID)),
 	).First(ctx)
 	if err != nil {
+		if generated.IsNotFound(err) {
+			return nil, err
+		}
+
+		logger.Errorw("failed to get annotation", "error", err)
+		return nil, ErrInternalServerError
+	}
+
+	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataAnnotationNamespaceUpdate); err != nil {
 		return nil, err
 	}
 
-	err = r.client.Annotation.DeleteOne(ant).Exec(ctx)
-	if err != nil {
-		return nil, err
+	if err = r.client.Annotation.DeleteOne(ant).Exec(ctx); err != nil {
+		logger.Errorw("failed to delete annotation", "error", err)
+		return nil, ErrInternalServerError
 	}
 
 	return &AnnotationDeleteResponse{DeletedID: ant.ID}, nil

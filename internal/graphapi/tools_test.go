@@ -242,3 +242,11 @@ func newTestServer(options ...testServerOption) (*httptest.Server, error) {
 
 	return httptest.NewServer(srv.Handler()), nil
 }
+
+func newString(s string) *string {
+	return &s
+}
+
+func newBool(b bool) *bool {
+	return &b
+}

@@ -44,12 +44,22 @@ func TestAnnotationNamespacesCreate(t *testing.T) {
 		{
 			TestName:                 "Failed when name is in use by same owner",
 			AnnotationNamespaceInput: testclient.CreateAnnotationNamespaceInput{Name: ns1.Name, OwnerID: ns1.OwnerID},
-			ErrorMsg:                 "constraint failed", // TODO: This should have a better error message
+			ErrorMsg:                 "must be unique",
 		},
 		{
 			TestName:                 "Fails when owner is empty",
 			AnnotationNamespaceInput: testclient.CreateAnnotationNamespaceInput{Name: ns1.Name, OwnerID: ""},
-			ErrorMsg:                 "value is less than the required length", // TODO: This should have a better error message
+			ErrorMsg:                 "must not be empty",
+		},
+		{
+			TestName:                 "Fails when name is empty",
+			AnnotationNamespaceInput: testclient.CreateAnnotationNamespaceInput{Name: "", OwnerID: ns1.OwnerID},
+			ErrorMsg:                 "must not be empty",
+		},
+		{
+			TestName:                 "Fails when owner is an invalid gidx",
+			AnnotationNamespaceInput: testclient.CreateAnnotationNamespaceInput{Name: ns1.Name, OwnerID: "test-invalid-id"},
+			ErrorMsg:                 "invalid id",
 		},
 	}
 
@@ -104,6 +114,21 @@ func TestAnnotationNamespacesDelete(t *testing.T) {
 			ErrorMsg:              "namespace is in use and can't be deleted",
 		},
 		{
+			TestName:              "Fails when name is empty",
+			AnnotationNamespaceID: "",
+			ErrorMsg:              "must not be empty",
+		},
+		{
+			TestName:              "Fails when id is an invalid gidx",
+			AnnotationNamespaceID: "test-invalid-id",
+			ErrorMsg:              "invalid id",
+		},
+		{
+			TestName:              "Fails when id is not found",
+			AnnotationNamespaceID: gidx.MustNewID("testing"),
+			ErrorMsg:              "not found",
+		},
+		{
 			TestName:              "Successful when nothing is using it",
 			AnnotationNamespaceID: ns3.ID,
 		},
@@ -149,32 +174,65 @@ func TestAnnotationNamespacesUpdate(t *testing.T) {
 	ns2 := AnnotationNamespaceBuilder{OwnerID: ns.OwnerID}.MustNew(ctx)
 
 	testCases := []struct {
-		TestName string
-		ID       gidx.PrefixedID
-		NewName  string
-		ErrorMsg string
+		TestName   string
+		ID         gidx.PrefixedID
+		NewName    *string
+		NewPrivate *bool
+		ErrorMsg   string
 	}{
 		{
-			TestName: "Successful path",
+			TestName: "Successful path to update name",
 			ID:       AnnotationNamespaceBuilder{}.MustNew(ctx).ID,
-			NewName:  gofakeit.DomainName(),
+			NewName:  newString(gofakeit.DomainName()),
+		},
+		{
+			TestName:   "Successful path to update namespace to private",
+			ID:         AnnotationNamespaceBuilder{}.MustNew(ctx).ID,
+			NewPrivate: newBool(true),
 		},
 		{
 			TestName: "Successful even when name is in use by another tenant",
 			ID:       AnnotationNamespaceBuilder{}.MustNew(ctx).ID,
-			NewName:  ns.Name,
+			NewName:  newString(ns.Name),
+		},
+		{
+			TestName: "Successful even if name and private is omitted",
+			ID:       ns.ID,
 		},
 		{
 			TestName: "Failed when name is in use by same tenant",
 			ID:       ns2.ID,
-			NewName:  ns.Name,
-			ErrorMsg: "constraint failed", // TODO: This should have a better error message
+			NewName:  newString(ns.Name),
+			ErrorMsg: "must be unique",
+		},
+		{
+			TestName: "Fails when id is empty",
+			ID:       "",
+			ErrorMsg: "must not be empty",
+		},
+		{
+			TestName: "Fails when id is not found",
+			ID:       gidx.MustNewID("testing"),
+			NewName:  newString(ns.Name),
+			ErrorMsg: "not found",
+		},
+		{
+			TestName: "Fails when id is an invalid gidx",
+			ID:       "test-invalid-id",
+			NewName:  newString(ns.Name),
+			ErrorMsg: "invalid id",
+		},
+		{
+			TestName: "Fails when name is empty",
+			ID:       ns.ID,
+			NewName:  newString(""),
+			ErrorMsg: "must not be empty",
 		},
 	}
 
 	for _, tt := range testCases {
 		t.Run(tt.TestName, func(t *testing.T) {
-			resp, err := graphTestClient().AnnotationNamespaceUpdate(ctx, tt.ID, testclient.UpdateAnnotationNamespaceInput{Name: &tt.NewName})
+			resp, err := graphTestClient().AnnotationNamespaceUpdate(ctx, tt.ID, testclient.UpdateAnnotationNamespaceInput{Name: tt.NewName, Private: tt.NewPrivate})
 
 			if tt.ErrorMsg != "" {
 				assert.Error(t, err)
@@ -185,7 +243,12 @@ func TestAnnotationNamespacesUpdate(t *testing.T) {
 
 			require.NoError(t, err)
 			assert.NotNil(t, resp.AnnotationNamespaceUpdate.AnnotationNamespace)
-			assert.Equal(t, tt.NewName, resp.AnnotationNamespaceUpdate.AnnotationNamespace.Name)
+			if tt.NewName != nil {
+				assert.Equal(t, *tt.NewName, resp.AnnotationNamespaceUpdate.AnnotationNamespace.Name)
+			}
+			if tt.NewPrivate != nil {
+				assert.Equal(t, *tt.NewPrivate, resp.AnnotationNamespaceUpdate.AnnotationNamespace.Private)
+			}
 		})
 	}
 }
@@ -214,11 +277,26 @@ func TestAnnotationNamespacesGet(t *testing.T) {
 			QueryID:    ns1.ID,
 			ExpectedLB: ns1,
 		},
+		{
+			TestName: "Fails when id is empty",
+			QueryID:  "",
+			ErrorMsg: "must not be empty",
+		},
+		{
+			TestName: "Fails when id is an invalid gidx",
+			QueryID:  "test-invalid-id",
+			ErrorMsg: "invalid id",
+		},
+		{
+			TestName: "Fails when id is not found",
+			QueryID:  gidx.MustNewID("testing"),
+			ErrorMsg: "not found",
+		},
 	}
 
 	for _, tt := range testCases {
 		t.Run(tt.TestName, func(t *testing.T) {
-			resp, err := graphTestClient().GetAnnotationNamespace(ctx, ns1.ID)
+			resp, err := graphTestClient().GetAnnotationNamespace(ctx, tt.QueryID)
 
 			if tt.ErrorMsg != "" {
 				assert.Error(t, err)

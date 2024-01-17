@@ -43,12 +43,22 @@ func TestStatusNamespacesCreate(t *testing.T) {
 		{
 			TestName:             "Failed when name is in use by same resource provider",
 			StatusNamespaceInput: testclient.CreateStatusNamespaceInput{Name: ns1.Name, ResourceProviderID: ns1.ResourceProviderID},
-			ErrorMsg:             "constraint failed", // TODO: This should have a better error message
+			ErrorMsg:             "must be unique",
 		},
 		{
 			TestName:             "Fails when resource provider is empty",
 			StatusNamespaceInput: testclient.CreateStatusNamespaceInput{Name: ns1.Name, ResourceProviderID: ""},
-			ErrorMsg:             "value is less than the required length", // TODO: This should have a better error message
+			ErrorMsg:             "must not be empty",
+		},
+		{
+			TestName:             "Fails when resource provider is an invalid gidx",
+			StatusNamespaceInput: testclient.CreateStatusNamespaceInput{Name: ns1.Name, ResourceProviderID: "test-invalid-id"},
+			ErrorMsg:             "invalid id",
+		},
+		{
+			TestName:             "Fails when name is empty",
+			StatusNamespaceInput: testclient.CreateStatusNamespaceInput{Name: "", ResourceProviderID: ns1.ResourceProviderID},
+			ErrorMsg:             "must not be empty",
 		},
 	}
 
@@ -102,6 +112,21 @@ func TestStatusNamespacesDelete(t *testing.T) {
 			ErrorMsg:          "namespace is in use and can't be deleted",
 		},
 		{
+			TestName:          "Fails when id is empty",
+			StatusNamespaceID: "",
+			ErrorMsg:          "must not be empty",
+		},
+		{
+			TestName:          "Fails when id is an invalid gidx",
+			StatusNamespaceID: "test-invalid-id",
+			ErrorMsg:          "invalid id",
+		},
+		{
+			TestName:          "Fails when id is not found",
+			StatusNamespaceID: gidx.MustNewID("testing"),
+			ErrorMsg:          "not found",
+		},
+		{
 			TestName:          "Successful when nothing is using it",
 			StatusNamespaceID: ns3.ID,
 		},
@@ -147,32 +172,72 @@ func TestStatusNamespacesUpdate(t *testing.T) {
 	ns2 := StatusNamespaceBuilder{ResourceProviderID: ns.ResourceProviderID}.MustNew(ctx)
 
 	testCases := []struct {
-		TestName string
-		ID       gidx.PrefixedID
-		NewName  string
-		ErrorMsg string
+		TestName   string
+		ID         gidx.PrefixedID
+		NewName    *string
+		NewPrivate *bool
+		ErrorMsg   string
 	}{
 		{
-			TestName: "Successful path",
+			TestName: "Successful path to update name",
 			ID:       StatusNamespaceBuilder{}.MustNew(ctx).ID,
-			NewName:  gofakeit.DomainName(),
+			NewName:  newString(gofakeit.DomainName()),
+		},
+		{
+			TestName:   "Successful path to update namespace to private",
+			ID:         StatusNamespaceBuilder{}.MustNew(ctx).ID,
+			NewPrivate: newBool(true),
 		},
 		{
 			TestName: "Successful even when name is in use by another tenant",
 			ID:       StatusNamespaceBuilder{}.MustNew(ctx).ID,
-			NewName:  ns.Name,
+			NewName:  newString(ns.Name),
 		},
 		{
-			TestName: "Failed when name is in use by same tenant",
+			TestName: "Successful even if name and private is omitted",
+			ID:       ns.ID,
+		},
+		{
+			TestName: "Fails when name is empty",
+			ID:       ns.ID,
+			NewName:  newString(""),
+			ErrorMsg: "must not be empty",
+		},
+		{
+			TestName: "Fails when name is in use by same tenant",
 			ID:       ns2.ID,
-			NewName:  ns.Name,
-			ErrorMsg: "constraint failed", // TODO: This should have a better error message
+			NewName:  newString(ns.Name),
+			ErrorMsg: "must be unique",
+		},
+		{
+			TestName: "Fails when id is empty",
+			ID:       "",
+			NewName:  newString(ns.Name),
+			ErrorMsg: "must not be empty",
+		},
+		{
+			TestName: "Fails when id is an invalid gidx",
+			ID:       "test-invalid-id",
+			NewName:  newString(ns.Name),
+			ErrorMsg: "invalid id",
+		},
+		{
+			TestName: "Fails when id is not found",
+			ID:       gidx.MustNewID("testing"),
+			NewName:  newString(ns.Name),
+			ErrorMsg: "not found",
+		},
+		{
+			TestName: "Fails when name is empty",
+			ID:       ns.ID,
+			NewName:  newString(""),
+			ErrorMsg: "must not be empty",
 		},
 	}
 
 	for _, tt := range testCases {
 		t.Run(tt.TestName, func(t *testing.T) {
-			resp, err := graphTestClient().StatusNamespaceUpdate(ctx, tt.ID, testclient.UpdateStatusNamespaceInput{Name: &tt.NewName})
+			resp, err := graphTestClient().StatusNamespaceUpdate(ctx, tt.ID, testclient.UpdateStatusNamespaceInput{Name: tt.NewName, Private: tt.NewPrivate})
 
 			if tt.ErrorMsg != "" {
 				assert.Error(t, err)
@@ -183,7 +248,12 @@ func TestStatusNamespacesUpdate(t *testing.T) {
 
 			require.NoError(t, err)
 			assert.NotNil(t, resp.StatusNamespaceUpdate.StatusNamespace)
-			assert.Equal(t, tt.NewName, resp.StatusNamespaceUpdate.StatusNamespace.Name)
+			if tt.NewName != nil {
+				assert.Equal(t, *tt.NewName, resp.StatusNamespaceUpdate.StatusNamespace.Name)
+			}
+			if tt.NewPrivate != nil {
+				assert.Equal(t, *tt.NewPrivate, resp.StatusNamespaceUpdate.StatusNamespace.Private)
+			}
 		})
 	}
 }

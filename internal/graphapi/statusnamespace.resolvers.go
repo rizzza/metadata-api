@@ -7,7 +7,6 @@ package graphapi
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"go.infratographer.com/permissions-api/pkg/permissions"
 	"go.infratographer.com/x/gidx"
@@ -18,13 +17,30 @@ import (
 
 // StatusNamespaceCreate is the resolver for the statusNamespaceCreate field.
 func (r *mutationResolver) StatusNamespaceCreate(ctx context.Context, input generated.CreateStatusNamespaceInput) (*StatusNamespaceCreatePayload, error) {
+	if input.Name == "" {
+		return nil, NewInvalidFieldError("name", ErrFieldEmpty)
+	}
+
+	if input.ResourceProviderID == "" {
+		return nil, NewInvalidFieldError("resourceProviderID", ErrFieldEmpty)
+	}
+
+	if _, err := gidx.Parse(input.ResourceProviderID.String()); err != nil {
+		return nil, NewInvalidFieldError("resourceProviderID", err)
+	}
+
 	if err := permissions.CheckAccess(ctx, input.ResourceProviderID, actionMetadataStatusNamespaceUpdate); err != nil {
 		return nil, err
 	}
 
 	ns, err := r.client.StatusNamespace.Create().SetInput(input).Save(ctx)
 	if err != nil {
-		return nil, err
+		if generated.IsConstraintError(err) {
+			return nil, NewInvalidFieldError("name", ErrUniquenessConstraint)
+		}
+
+		r.logger.Errorw("failed to create status namespace", "error", err)
+		return nil, ErrInternalServerError
 	}
 
 	return &StatusNamespaceCreatePayload{StatusNamespace: ns}, nil
@@ -32,9 +48,24 @@ func (r *mutationResolver) StatusNamespaceCreate(ctx context.Context, input gene
 
 // StatusNamespaceDelete is the resolver for the statusNamespaceDelete field.
 func (r *mutationResolver) StatusNamespaceDelete(ctx context.Context, id gidx.PrefixedID, force bool) (*StatusNamespaceDeletePayload, error) {
+	logger := r.logger.With("statusNamespaceID", id)
+
+	if id == "" {
+		return nil, NewInvalidFieldError("id", ErrFieldEmpty)
+	}
+
+	if _, err := gidx.Parse(id.String()); err != nil {
+		return nil, NewInvalidFieldError("id", err)
+	}
+
 	sns, err := r.client.StatusNamespace.Get(ctx, id)
 	if err != nil {
-		return nil, err
+		if generated.IsNotFound(err) {
+			return nil, err
+		}
+
+		logger.Errorw("failed to get status namespace", "error", err)
+		return nil, ErrInternalServerError
 	}
 
 	if err := permissions.CheckAccess(ctx, sns.ResourceProviderID, actionMetadataStatusNamespaceUpdate); err != nil {
@@ -43,14 +74,16 @@ func (r *mutationResolver) StatusNamespaceDelete(ctx context.Context, id gidx.Pr
 
 	tx, err := r.client.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		return nil, err
+		logger.Errorw("failed to begin transaction", "error", err)
+		return nil, ErrInternalServerError
 	}
 
 	defer tx.Rollback()
 
 	statuses, err := tx.Status.Query().Where(status.StatusNamespaceID(id)).All(ctx)
 	if err != nil {
-		return nil, err
+		logger.Errorw("failed to get statuses", "error", err)
+		return nil, ErrInternalServerError
 	}
 
 	statusCount := len(statuses)
@@ -61,21 +94,24 @@ func (r *mutationResolver) StatusNamespaceDelete(ctx context.Context, id gidx.Pr
 				// TODO - :bug: - must delete one-by-one to ensure the deleted ID is available when the delete eventhook is triggered
 				// statusCount, err = r.client.Status.Delete().Where(status.StatusNamespaceID(id)).Exec(ctx)
 				if err := tx.Status.DeleteOneID(status.ID).Exec(ctx); err != nil {
-					return nil, err
+					logger.Errorw("failed to delete status", "error", err, "statusID", status.ID)
+					return nil, ErrInternalServerError
 				}
 				statusCount++
 			}
 		} else {
-			return nil, fmt.Errorf("status namespace is in use and can't be deleted")
+			return nil, ErrNamespaceInUse
 		}
 	}
 
 	if err := tx.StatusNamespace.DeleteOneID(id).Exec(ctx); err != nil {
-		return nil, err
+		logger.Errorw("failed to delete status namespace", "error", err)
+		return nil, ErrInternalServerError
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, err
+		logger.Errorw("failed to commit transaction", "error", err)
+		return nil, ErrInternalServerError
 	}
 
 	return &StatusNamespaceDeletePayload{DeletedID: id, StatusDeletedCount: statusCount}, nil
@@ -83,8 +119,27 @@ func (r *mutationResolver) StatusNamespaceDelete(ctx context.Context, id gidx.Pr
 
 // StatusNamespaceUpdate is the resolver for the statusNamespaceUpdate field.
 func (r *mutationResolver) StatusNamespaceUpdate(ctx context.Context, id gidx.PrefixedID, input generated.UpdateStatusNamespaceInput) (*StatusNamespaceUpdatePayload, error) {
+	logger := r.logger.With("statusNamespaceID", id)
+
+	if id == "" {
+		return nil, NewInvalidFieldError("id", ErrFieldEmpty)
+	}
+
+	if _, err := gidx.Parse(id.String()); err != nil {
+		return nil, NewInvalidFieldError("id", err)
+	}
+
+	if input.Name != nil && *input.Name == "" {
+		return nil, NewInvalidFieldError("name", ErrFieldEmpty)
+	}
+
 	sns, err := r.client.StatusNamespace.Get(ctx, id)
 	if err != nil {
+		if generated.IsNotFound(err) {
+			return nil, err
+		}
+
+		logger.Errorw("failed to get status namespace", "error", err)
 		return nil, err
 	}
 
@@ -92,14 +147,14 @@ func (r *mutationResolver) StatusNamespaceUpdate(ctx context.Context, id gidx.Pr
 		return nil, err
 	}
 
-	ns, err := r.client.StatusNamespace.Get(ctx, id)
+	ns, err := sns.Update().SetInput(input).Save(ctx)
 	if err != nil {
-		return nil, err
-	}
+		if generated.IsConstraintError(err) {
+			return nil, NewInvalidFieldError("name", ErrUniquenessConstraint)
+		}
 
-	ns, err = ns.Update().SetInput(input).Save(ctx)
-	if err != nil {
-		return nil, err
+		logger.Errorw("failed to update status namespace", "error", err)
+		return nil, ErrInternalServerError
 	}
 
 	return &StatusNamespaceUpdatePayload{StatusNamespace: ns}, nil
